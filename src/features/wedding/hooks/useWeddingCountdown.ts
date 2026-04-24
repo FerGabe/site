@@ -11,9 +11,11 @@ export type CountdownParts = {
   minutes: number;
   seconds: number;
   isPast: boolean;
+  /** Só fica true no cliente após o mount — evita erro de hidratação com `Date`. */
+  isReady: boolean;
 };
 
-function getParts(target: Date, now: Date): CountdownParts {
+function getParts(target: Date, now: Date): Omit<CountdownParts, "isReady"> {
   const diff = target.getTime() - now.getTime();
   if (diff <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true };
@@ -25,15 +27,30 @@ function getParts(target: Date, now: Date): CountdownParts {
   return { days, hours, minutes, seconds, isPast: false };
 }
 
+/** Placeholder estável no SSR e no 1.º render no cliente (antes do useEffect). */
+const PLACEHOLDER: CountdownParts = {
+  days: 0,
+  hours: 0,
+  minutes: 0,
+  seconds: 0,
+  isPast: false,
+  isReady: false,
+};
+
 export function useWeddingCountdown(): CountdownParts {
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000);
+    const tick = () => setNow(new Date());
+    tick();
+    const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
   }, []);
 
-  return useMemo(() => getParts(WEDDING_DATE, now), [now]);
+  return useMemo(() => {
+    if (!now) return PLACEHOLDER;
+    return { ...getParts(WEDDING_DATE, now), isReady: true };
+  }, [now]);
 }
 
 export { WEDDING_DATE };
