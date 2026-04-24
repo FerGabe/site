@@ -1,0 +1,45 @@
+import Image from "next/image";
+import type { GiftItem } from "../types/gift";
+import { formatBRL } from "../utils/format";
+
+type GiftCardProps = {
+  gift: GiftItem;
+  onPresentear: () => void;
+};
+
+export function GiftCard({ gift, onPresentear }: GiftCardProps) {
+  const priceLabel =
+    gift.openAmount || gift.price === null
+      ? "Valor a definir"
+      : formatBRL(gift.price);
+
+  return (
+    <article className="group relative flex flex-col rounded-[1.35rem] border border-bege-claro/80 bg-white/70 shadow-sm hover:shadow-md hover:border-salvia/35 transition-all duration-500 overflow-hidden">
+      <div className="relative aspect-[5/4] overflow-hidden">
+        <Image
+          src={gift.image}
+          alt={gift.name}
+          fill
+          className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-texto/35 via-transparent to-transparent opacity-80" />
+      </div>
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
+        <h3 className="font-display text-xl text-texto leading-snug mb-2">
+          {gift.name}
+        </h3>
+        <p className="text-sm text-oliva font-medium tracking-wide mb-5">
+          {priceLabel}
+        </p>
+        <button
+          type="button"
+          onClick={onPresentear}
+          className="mt-auto w-full rounded-full border border-oliva/40 py-3 text-sm tracking-wide text-oliva hover:bg-oliva hover:text-white hover:border-oliva transition-all"
+        >
+          Presentear
+        </button>
+      </div>
+    </article>
+  );
+}

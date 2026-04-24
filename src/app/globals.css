@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cream: #f7f5f0;
+  --bege-claro: #eae2d2;
+  --bege-areia: #d8cbb1;
+  --salvia: #9caa7c;
+  --oliva: #6f7d52;
+  --texto: #5e5a50;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-cream text-texto font-sans antialiased;
+}
+
+::selection {
+  background: rgba(156, 170, 124, 0.35);
+  color: #3d3a33;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
