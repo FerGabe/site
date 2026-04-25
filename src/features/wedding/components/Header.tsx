@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { NameConnector } from "@/shared/components/NameConnector";
 
 const links = [
   { href: "#historia", label: "História" },
@@ -31,7 +32,7 @@ export function Header() {
           href="#topo"
           className="font-display text-lg md:text-xl tracking-wide text-texto hover:text-oliva transition-colors"
         >
-          Fer <span className="mx-2 align-middle text-texto/45">·</span> Gabe
+          Fer <NameConnector /> Gabe
         </a>
         <nav className="flex flex-1 justify-center md:justify-end items-center gap-4 md:gap-8 text-xs md:text-sm tracking-wide text-texto/80 overflow-x-auto no-scrollbar">
           {links.map((l) => (

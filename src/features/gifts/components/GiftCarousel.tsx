@@ -38,6 +38,7 @@ export function GiftCarousel({
   }
 
   const goNext = () => setPage((p) => (p + 1) % pages);
+  const goPrev = () => setPage((p) => (p - 1 + pages) % pages);
 
   return (
     <div>
@@ -54,18 +55,45 @@ export function GiftCarousel({
 
       {pages > 1 ? (
         <div className="mt-8 flex flex-col items-center gap-3">
-          <button
-            type="button"
-            onClick={goNext}
-            className="rounded-full border border-oliva/40 bg-white px-7 py-3 text-sm tracking-wide text-oliva hover:bg-oliva hover:text-white transition-all"
-          >
-            Ver próximos 6 presentes
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={goPrev}
+              className="inline-flex items-center justify-center rounded-full border border-oliva/35 bg-white px-5 py-3 text-sm tracking-wide text-oliva hover:bg-oliva hover:text-white transition-all"
+              aria-label="Voltar grade de presentes"
+            >
+              <Chevron direction="left" />
+              <span className="ml-2">Voltar</span>
+            </button>
+            <button
+              type="button"
+              onClick={goNext}
+              className="inline-flex items-center justify-center rounded-full border border-oliva/40 bg-white px-5 py-3 text-sm tracking-wide text-oliva hover:bg-oliva hover:text-white transition-all"
+              aria-label="Avançar grade de presentes"
+            >
+              <span className="mr-2">Avançar</span>
+              <Chevron direction="right" />
+            </button>
+          </div>
           <p className="text-xs text-texto/50">
             Grade {page + 1} de {pages}
           </p>
         </div>
       ) : null}
     </div>
+  );
+}
+
+function Chevron({ direction }: { direction: "left" | "right" }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d={direction === "left" ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6"}
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

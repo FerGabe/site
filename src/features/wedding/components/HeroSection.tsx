@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { BotanicalCorner } from "@/shared/components/BotanicalFrame";
 import { giftImageUrl } from "@/features/gifts/utils/giftImage";
+import { NameConnector } from "@/shared/components/NameConnector";
 
 export function HeroSection() {
   return (
@@ -33,7 +34,7 @@ export function HeroSection() {
           Save the date
         </p>
         <h1 className="font-display text-[clamp(2.5rem,8vw,4.75rem)] leading-[1.05] text-texto mb-4 animate-fade-up [animation-delay:140ms] opacity-0">
-          Fer <span className="mx-2 align-middle text-texto/45">·</span> Gabe
+          Fer <NameConnector className="h-10 w-10 text-xl" /> Gabe
         </h1>
         <p className="font-display text-xl sm:text-2xl md:text-3xl text-texto/85 mb-10 animate-fade-up [animation-delay:220ms] opacity-0">
           6 de junho de 2026
