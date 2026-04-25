@@ -1,9 +1,38 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { BotanicalCorner } from "@/shared/components/BotanicalFrame";
-import { giftImageUrl } from "@/features/gifts/utils/giftImage";
-import { NameConnector } from "@/shared/components/NameConnector";
+import { MonogramMark } from "@/shared/components/MonogramMark";
+
+/** Quanto a foto “contraria” o scroll (maior = mais dinâmico). */
+const PARALLAX = 0.58;
 
 export function HeroSection() {
+  const [bgTranslateY, setBgTranslateY] = useState(0);
+
+  useEffect(() => {
+    let raf = 0;
+
+    const apply = () => {
+      raf = 0;
+      /* Scroll para baixo → a foto acompanha “descendo” (mesmo sentido), sem limite artificial. */
+      setBgTranslateY(window.scrollY * PARALLAX);
+    };
+
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(apply);
+    };
+
+    apply();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
   return (
     <section
       id="topo"
@@ -11,15 +40,19 @@ export function HeroSection() {
     >
       <div className="absolute inset-0 -z-10">
         <Image
-          src={giftImageUrl("fergabe-hero-bg")}
+          src="/couple/casal-real.png"
           alt=""
           fill
           priority
-          className="object-cover opacity-[0.22] scale-105"
+          className="object-cover object-[center_60%] scale-105 grayscale will-change-transform"
+          style={{
+            opacity: 0.34,
+            transform: `translateY(${bgTranslateY}px) scale(1.05)`,
+          }}
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-cream via-cream/92 to-cream" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(111,125,82,0.08),transparent_55%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-cream/75 via-cream/70 to-cream/78" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(111,125,82,0.09),transparent_58%)]" />
       </div>
 
       <div className="pointer-events-none absolute left-2 top-28 md:left-8 md:top-36 opacity-70">
@@ -33,9 +66,12 @@ export function HeroSection() {
         <p className="font-display text-xs sm:text-sm tracking-[0.45em] uppercase text-oliva/90 mb-6 animate-fade-up [animation-delay:80ms] opacity-0">
           Save the date
         </p>
-        <h1 className="font-display text-[clamp(2.5rem,8vw,4.75rem)] leading-[1.05] text-texto mb-4 animate-fade-up [animation-delay:140ms] opacity-0">
-          Fer <NameConnector className="h-10 w-10 text-xl" /> Gabe
-        </h1>
+        <div className="mb-4 flex justify-center animate-fade-up [animation-delay:140ms] opacity-0">
+          <MonogramMark
+            size={320}
+            className="h-40 w-40 sm:h-44 sm:w-44 md:h-48 md:w-48"
+          />
+        </div>
         <p className="font-display text-xl sm:text-2xl md:text-3xl text-texto/85 mb-10 animate-fade-up [animation-delay:220ms] opacity-0">
           6 de junho de 2026
         </p>

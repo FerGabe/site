@@ -56,7 +56,7 @@ export function CountdownSection() {
         ) : (
           <motion.div
             className="flex flex-wrap justify-center gap-3 sm:gap-5 md:gap-6"
-            initial={{ opacity: 0, y: 12 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >

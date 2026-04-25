@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { NameConnector } from "@/shared/components/NameConnector";
+import { MonogramMark } from "@/shared/components/MonogramMark";
 
 const links = [
   { href: "#historia", label: "História" },
@@ -30,9 +30,10 @@ export function Header() {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-3 gap-x-4 px-5 py-4 md:px-8">
         <a
           href="#topo"
-          className="font-display text-lg md:text-xl tracking-wide text-texto hover:text-oliva transition-colors"
+          className="inline-flex items-center rounded-xl transition-opacity hover:opacity-85"
+          aria-label="Fer e Gabe"
         >
-          Fer <NameConnector /> Gabe
+          <MonogramMark size={52} className="h-11 w-11 md:h-12 md:w-12" />
         </a>
         <nav className="flex flex-1 justify-center md:justify-end items-center gap-4 md:gap-8 text-xs md:text-sm tracking-wide text-texto/80 overflow-x-auto no-scrollbar">
           {links.map((l) => (

@@ -6,12 +6,16 @@ type GiftCardProps = {
   gift: GiftItem;
   onPresentear: () => void;
   layout?: "grid" | "carousel";
+  locked?: boolean;
+  lockLabel?: string;
 };
 
 export function GiftCard({
   gift,
   onPresentear,
   layout = "grid",
+  locked = false,
+  lockLabel = "Reservado",
 }: GiftCardProps) {
   const priceLabel =
     gift.openAmount || gift.price === null
@@ -37,6 +41,11 @@ export function GiftCard({
           }
         />
         <div className="absolute inset-0 bg-gradient-to-t from-texto/35 via-transparent to-transparent opacity-80" />
+        {locked ? (
+          <span className="absolute left-3 top-3 rounded-full bg-oliva/90 px-3 py-1 text-[11px] tracking-wide text-white">
+            {lockLabel}
+          </span>
+        ) : null}
       </div>
       <div className="flex flex-1 flex-col p-5 sm:p-6">
         <h3 className="font-display text-xl text-texto leading-snug mb-2">
@@ -48,9 +57,10 @@ export function GiftCard({
         <button
           type="button"
           onClick={onPresentear}
-          className="mt-auto w-full rounded-full border border-oliva/40 py-3 text-sm tracking-wide text-oliva hover:bg-oliva hover:text-white hover:border-oliva transition-all"
+          disabled={locked}
+          className="mt-auto w-full rounded-full border border-oliva/40 py-3 text-sm tracking-wide text-oliva hover:bg-oliva hover:text-white hover:border-oliva transition-all disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-oliva"
         >
-          Presentear
+          {locked ? "Indisponível no momento" : "Presentear"}
         </button>
       </div>
     </article>

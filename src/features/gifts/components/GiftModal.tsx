@@ -4,7 +4,10 @@ import { useCallback, useEffect, useId, useState } from "react";
 import type { GiftItem } from "../types/gift";
 import { formatBRL } from "../utils/format";
 import { PaymentChoice } from "./PaymentChoice";
-import { saveGiftRequest } from "@/lib/firestore/saveGiftRequest";
+import {
+  confirmGiftPaymentById,
+  createGiftReservation,
+} from "@/lib/firestore/saveGiftRequest";
 import type { PaymentMethod } from "@/shared/types/firestore";
 
 type Step = "form" | "payment" | "success";
@@ -27,13 +30,17 @@ export function GiftModal({ gift, onClose }: GiftModalProps) {
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
+  const [reserveLoading, setReserveLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
 
   const reset = useCallback(() => {
     setStep("form");
     setForm(initialForm);
     setError(null);
     setLoading(false);
+    setReserveLoading(false);
+    setRequestId(null);
   }, []);
 
   useEffect(() => {
@@ -91,27 +98,63 @@ export function GiftModal({ gift, onClose }: GiftModalProps) {
   };
 
   const handleConfirmPaid = async () => {
-    if (!Number.isFinite(resolvedValue) || resolvedValue < 1) {
-      setError("Valor inválido.");
-      return;
+    try {
+      if (!requestId) {
+        setError(
+          "Antes de confirmar, copie a chave Pix ou clique em pagar com cartão para reservar o presente."
+        );
+        return;
+      }
+      if (!Number.isFinite(resolvedValue) || resolvedValue < 1) {
+        setError("Valor inválido.");
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      const result = await confirmGiftPaymentById(requestId);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setStep("success");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erro ao confirmar.";
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
-    setLoading(true);
-    setError(null);
-    const result = await saveGiftRequest({
-      giftId: gift.id,
-      giftName: gift.name,
-      giftValue: resolvedValue,
-      guestName: form.guestName,
-      guestWhatsapp: form.guestWhatsapp,
-      message: form.message,
-      paymentMethod: form.paymentMethod,
-    });
-    setLoading(false);
-    if (!result.ok) {
-      setError(result.error);
-      return;
+  };
+
+  const handleReserve = async () => {
+    try {
+      if (requestId) return;
+      if (!Number.isFinite(resolvedValue) || resolvedValue < 1) {
+        setError("Valor inválido.");
+        return;
+      }
+      if (!validateForm()) return;
+      setReserveLoading(true);
+      setError(null);
+      const result = await createGiftReservation({
+        giftId: gift.id,
+        giftName: gift.name,
+        giftValue: resolvedValue,
+        guestName: form.guestName,
+        guestWhatsapp: form.guestWhatsapp,
+        message: form.message,
+        paymentMethod: form.paymentMethod,
+      });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setRequestId(result.id);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erro ao reservar.";
+      setError(msg);
+    } finally {
+      setReserveLoading(false);
     }
-    setStep("success");
   };
 
   return (
@@ -291,8 +334,13 @@ export function GiftModal({ gift, onClose }: GiftModalProps) {
               ) : null}
               <PaymentChoice
                 method={form.paymentMethod}
-                onConfirmPaid={handleConfirmPaid}
+                onReserve={handleReserve}
+                onConfirmPaid={() => {
+                  void handleConfirmPaid();
+                }}
                 loading={loading}
+                reserveLoading={reserveLoading}
+                hasReserved={Boolean(requestId)}
               />
               <button
                 type="button"

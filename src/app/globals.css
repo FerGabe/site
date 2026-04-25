@@ -19,6 +19,13 @@ body {
   @apply bg-cream text-texto font-sans antialiased;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none;
+    opacity: 1 !important;
+  }
+}
+
 ::selection {
   background: rgba(156, 170, 124, 0.35);
   color: #3d3a33;

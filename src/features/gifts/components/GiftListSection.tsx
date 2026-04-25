@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { WEDDING_GIFTS } from "../data/gifts";
 import { GiftModal } from "./GiftModal";
 import { GiftCarousel } from "./GiftCarousel";
@@ -9,6 +9,8 @@ import type { PriceBand, PriceSort } from "../utils/filterGifts";
 import { filterAndSortGifts } from "../utils/filterGifts";
 import { SectionTitle } from "@/shared/components/SectionTitle";
 import { BotanicalDivider } from "@/shared/components/BotanicalFrame";
+import { getFirestoreDb } from "@/lib/firebase";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 
 const BANDS: { id: PriceBand; label: string }[] = [
   { id: "all", label: "Todos" },
@@ -27,6 +29,8 @@ export function GiftListSection() {
   const [selected, setSelected] = useState<GiftItem | null>(null);
   const [band, setBand] = useState<PriceBand>("all");
   const [sort, setSort] = useState<PriceSort>("default");
+  const [lockedGiftIds, setLockedGiftIds] = useState<Set<string>>(new Set());
+  const [permanentLocks, setPermanentLocks] = useState<Set<string>>(new Set());
 
   const base = useMemo(
     () => WEDDING_GIFTS.filter((g) => g.active),
@@ -39,6 +43,58 @@ export function GiftListSection() {
   );
 
   const scrollKey = `${band}-${sort}`;
+
+  useEffect(() => {
+    const db = getFirestoreDb();
+    if (!db) return;
+    const q = query(
+      collection(db, "gift_requests"),
+      where("status", "in", ["awaiting_payment", "pending_manual_review", "confirmed"])
+    );
+
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const now = Date.now();
+        const temporary = new Set<string>();
+        const permanent = new Set<string>();
+
+        snap.forEach((d) => {
+          const data = d.data() as {
+            giftId?: string;
+            status?: string;
+            reservedUntil?: string | null;
+          };
+          if (!data.giftId || !data.status) return;
+
+          if (data.status === "awaiting_payment") {
+            const until = data.reservedUntil
+              ? Date.parse(data.reservedUntil)
+              : 0;
+            if (until > now) temporary.add(data.giftId);
+            return;
+          }
+
+          if (
+            data.status === "pending_manual_review" ||
+            data.status === "confirmed"
+          ) {
+            permanent.add(data.giftId);
+          }
+        });
+
+        setLockedGiftIds(new Set([...temporary, ...permanent]));
+        setPermanentLocks(permanent);
+      },
+      () => {
+        /* Sem permissão de leitura ou índice: não quebra a página. */
+        setLockedGiftIds(new Set());
+        setPermanentLocks(new Set());
+      }
+    );
+
+    return () => unsub();
+  }, []);
 
   return (
     <section
@@ -107,6 +163,8 @@ export function GiftListSection() {
           gifts={visible}
           onPresentear={setSelected}
           scrollResetKey={scrollKey}
+          lockedGiftIds={lockedGiftIds}
+          permanentlyLockedGiftIds={permanentLocks}
         />
       </div>
 

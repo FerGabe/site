@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   title: "Fer & Gabe — 6 de junho de 2026",
   description:
     "Com muito amor, convidamos você a celebrar conosco o nosso casamento.",
+  icons: {
+    icon: "/brand/favicon.svg",
+    shortcut: "/brand/favicon.svg",
+    apple: "/brand/favicon.svg",
+  },
 };
 
 export default function RootLayout({

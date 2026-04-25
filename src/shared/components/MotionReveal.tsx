@@ -7,19 +7,9 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 const settled = { opacity: 1, y: 0 };
 
-/** Entrada suave acima da dobra (após hidratação). */
+/** Wrapper estável: o hero não usa opacity:0 no SSR (evita tela branca se o JS atrasar ou falhar). */
 export function MotionHero({ children }: { children: ReactNode }) {
-  const reduce = useReducedMotion();
-  return (
-    <motion.div
-      className="w-full"
-      initial={reduce ? { opacity: 1 } : { opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: reduce ? 0 : 0.95, ease }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className="w-full">{children}</div>;
 }
 
 /** Revelar ao entrar na viewport; respeita prefers-reduced-motion. */
@@ -34,7 +24,8 @@ export function MotionReveal({
   return (
     <motion.div
       className="w-full"
-      initial={reduce ? settled : { opacity: 0, y: 28 }}
+      /* false = não força opacity:0 no HTML; evita página “toda branca” se o JS falhar. */
+      initial={false}
       whileInView={settled}
       viewport={{ once: true, amount: 0.12, margin: "0px 0px -56px 0px" }}
       transition={{

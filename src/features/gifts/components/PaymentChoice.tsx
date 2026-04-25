@@ -9,9 +9,12 @@ import type { PaymentMethod } from "@/shared/types/firestore";
 
 type PaymentChoiceProps = {
   method: PaymentMethod;
+  onReserve: () => Promise<void>;
   onConfirmPaid: () => void;
   disabled?: boolean;
   loading?: boolean;
+  reserveLoading?: boolean;
+  hasReserved?: boolean;
 };
 
 function getPixKey(): string {
@@ -22,20 +25,33 @@ function getPixKey(): string {
 
 export function PaymentChoice({
   method,
+  onReserve,
   onConfirmPaid,
   disabled,
   loading,
+  reserveLoading,
+  hasReserved,
 }: PaymentChoiceProps) {
   const [copied, setCopied] = useState(false);
   const pixKey = getPixKey();
 
   const copyPix = async () => {
     try {
+      await onReserve();
       await navigator.clipboard.writeText(pixKey);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2200);
     } catch {
       setCopied(false);
+    }
+  };
+
+  const handleCardPay = async () => {
+    try {
+      await onReserve();
+      window.open(INFINITEPAY_PAYMENT_LINK, "_blank", "noopener,noreferrer");
+    } catch {
+      /* Erro já tratado no modal (reserva). */
     }
   };
 
@@ -46,14 +62,21 @@ export function PaymentChoice({
           Você será direcionado para o ambiente seguro da InfinitePay. Nenhum dado
           de cartão é coletado neste site.
         </p>
-        <a
-          href={INFINITEPAY_PAYMENT_LINK}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={() => {
+            void handleCardPay();
+          }}
+          disabled={reserveLoading}
           className="flex w-full items-center justify-center rounded-full bg-oliva px-6 py-3.5 text-sm font-medium tracking-wide text-white shadow-sm hover:bg-oliva/90 transition-all"
         >
-          Pagar com cartão
-        </a>
+          {reserveLoading ? "Reservando..." : "Pagar com cartão"}
+        </button>
+        {hasReserved ? (
+          <p className="text-xs text-texto/60 text-center">
+            Presente reservado por 1 dia aguardando confirmação.
+          </p>
+        ) : null}
         <button
           type="button"
           onClick={onConfirmPaid}
@@ -77,12 +100,20 @@ export function PaymentChoice({
         </p>
         <button
           type="button"
-          onClick={copyPix}
+          onClick={() => {
+            void copyPix();
+          }}
+          disabled={reserveLoading}
           className="mt-4 w-full rounded-full border border-oliva/30 py-2.5 text-sm text-oliva hover:bg-oliva hover:text-white transition-colors"
         >
-          {copied ? "Chave copiada!" : "Copiar chave Pix"}
+          {copied ? "Chave copiada!" : reserveLoading ? "Reservando..." : "Copiar chave Pix"}
         </button>
       </div>
+      {hasReserved ? (
+        <p className="text-xs text-texto/60 text-center -mt-2">
+          Presente reservado por 1 dia aguardando confirmação.
+        </p>
+      ) : null}
 
       <div className="flex flex-col items-center gap-3">
         <p className="text-xs uppercase tracking-[0.2em] text-texto/50">

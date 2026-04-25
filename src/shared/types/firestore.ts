@@ -2,7 +2,12 @@ import type { Timestamp } from "firebase/firestore";
 
 export type PaymentMethod = "pix" | "credit_card";
 
-export type GiftRequestStatus = "pending" | "confirmed" | "canceled";
+export type GiftRequestStatus =
+  | "awaiting_payment"
+  | "pending_manual_review"
+  | "confirmed"
+  | "canceled"
+  | "expired";
 
 export type GiftRequestPayload = {
   giftId: string;
