@@ -5,23 +5,36 @@ import { formatBRL } from "../utils/format";
 type GiftCardProps = {
   gift: GiftItem;
   onPresentear: () => void;
+  layout?: "grid" | "carousel";
 };
 
-export function GiftCard({ gift, onPresentear }: GiftCardProps) {
+export function GiftCard({
+  gift,
+  onPresentear,
+  layout = "grid",
+}: GiftCardProps) {
   const priceLabel =
     gift.openAmount || gift.price === null
       ? "Valor a definir"
       : formatBRL(gift.price);
 
   return (
-    <article className="group relative flex flex-col rounded-[1.35rem] border border-bege-claro/80 bg-white/70 shadow-sm hover:shadow-md hover:border-salvia/35 transition-all duration-500 overflow-hidden">
+    <article
+      className={`group relative flex h-full flex-col rounded-[1.35rem] border border-bege-claro/80 bg-white/70 shadow-sm hover:shadow-md hover:border-salvia/35 transition-all duration-500 overflow-hidden ${
+        layout === "carousel" ? "min-h-[26rem]" : ""
+      }`}
+    >
       <div className="relative aspect-[5/4] overflow-hidden">
         <Image
           src={gift.image}
           alt={gift.name}
           fill
           className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          sizes={
+            layout === "carousel"
+              ? "(max-width: 640px) 85vw, 300px"
+              : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          }
         />
         <div className="absolute inset-0 bg-gradient-to-t from-texto/35 via-transparent to-transparent opacity-80" />
       </div>

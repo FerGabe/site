@@ -6,6 +6,7 @@ export type SaveRsvpInput = {
   attending: boolean;
   adults: number;
   children: number;
+  companionNames: string[];
   message: string;
 };
 
@@ -29,6 +30,7 @@ export async function saveRsvp(input: SaveRsvpInput): Promise<SaveResult> {
       attending: input.attending,
       adults: input.adults,
       children: input.children,
+      companionNames: input.companionNames.map((n) => n.trim()).filter(Boolean),
       message: input.message.trim(),
       createdAt: serverTimestamp(),
     });

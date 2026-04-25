@@ -10,6 +10,8 @@ type FormState = {
   attending: "yes" | "no";
   adults: string;
   children: string;
+  otherAdultNames: string[];
+  childrenNames: string[];
   message: string;
 };
 
@@ -18,6 +20,8 @@ const initial: FormState = {
   attending: "yes",
   adults: "1",
   children: "0",
+  otherAdultNames: [],
+  childrenNames: [],
   message: "",
 };
 
@@ -30,6 +34,49 @@ export function RSVPSection() {
   const attendingBool = form.attending === "yes";
   const adultsNum = Math.max(0, parseInt(form.adults, 10) || 0);
   const childrenNum = Math.max(0, parseInt(form.children, 10) || 0);
+  const extraAdults = Math.max(0, adultsNum - 1);
+
+  const ensureSize = (arr: string[] | undefined, size: number): string[] => {
+    const safe = arr ?? [];
+    if (safe.length === size) return safe;
+    if (safe.length > size) return safe.slice(0, size);
+    return [...safe, ...Array(size - safe.length).fill("")];
+  };
+
+  const onAdultsChange = (value: string) => {
+    const nextAdults = Math.max(0, parseInt(value, 10) || 0);
+    const nextExtraAdults = Math.max(0, nextAdults - 1);
+    setForm((f) => ({
+      ...f,
+      adults: value,
+      otherAdultNames: ensureSize(f.otherAdultNames, nextExtraAdults),
+    }));
+  };
+
+  const onChildrenChange = (value: string) => {
+    const nextChildren = Math.max(0, parseInt(value, 10) || 0);
+    setForm((f) => ({
+      ...f,
+      children: value,
+      childrenNames: ensureSize(f.childrenNames, nextChildren),
+    }));
+  };
+
+  const updateOtherAdultName = (index: number, value: string) => {
+    setForm((f) => {
+      const next = [...(f.otherAdultNames ?? [])];
+      next[index] = value;
+      return { ...f, otherAdultNames: next };
+    });
+  };
+
+  const updateChildName = (index: number, value: string) => {
+    setForm((f) => {
+      const next = [...(f.childrenNames ?? [])];
+      next[index] = value;
+      return { ...f, childrenNames: next };
+    });
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +90,17 @@ export function RSVPSection() {
       setError("Informe ao menos 1 adulto se for comparecer.");
       return;
     }
+    if (
+      attendingBool &&
+      (form.otherAdultNames ?? []).some((n) => !n.trim())
+    ) {
+      setError("Preencha o nome de todos os adultos acompanhantes.");
+      return;
+    }
+    if (attendingBool && (form.childrenNames ?? []).some((n) => !n.trim())) {
+      setError("Preencha o nome de todas as crianças.");
+      return;
+    }
 
     setLoading(true);
     const result = await saveRsvp({
@@ -50,6 +108,11 @@ export function RSVPSection() {
       attending: attendingBool,
       adults: attendingBool ? adultsNum : 0,
       children: attendingBool ? childrenNum : 0,
+      companionNames: attendingBool
+        ? [...(form.otherAdultNames ?? []), ...(form.childrenNames ?? [])]
+            .map((n) => n.trim())
+            .filter(Boolean)
+        : [],
       message: form.message,
     });
     setLoading(false);
@@ -154,9 +217,7 @@ export function RSVPSection() {
                     min={1}
                     className="mt-1.5 w-full rounded-xl border border-bege-claro bg-cream/50 px-4 py-3 text-texto outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
                     value={form.adults}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, adults: e.target.value }))
-                    }
+                    onChange={(e) => onAdultsChange(e.target.value)}
                   />
                 </label>
                 <label className="block text-sm">
@@ -166,11 +227,51 @@ export function RSVPSection() {
                     min={0}
                     className="mt-1.5 w-full rounded-xl border border-bege-claro bg-cream/50 px-4 py-3 text-texto outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
                     value={form.children}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, children: e.target.value }))
-                    }
+                    onChange={(e) => onChildrenChange(e.target.value)}
                   />
                 </label>
+              </div>
+            )}
+
+            {attendingBool && extraAdults > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm text-texto/70">
+                  Nome dos adultos acompanhantes
+                </p>
+                {(form.otherAdultNames ?? []).map((name, index) => (
+                  <label className="block text-sm" key={`adult-${index}`}>
+                    <span className="text-texto/60">
+                      Adulto acompanhante {index + 1}
+                    </span>
+                    <input
+                      required
+                      className="mt-1.5 w-full rounded-xl border border-bege-claro bg-cream/50 px-4 py-3 text-texto outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
+                      value={name}
+                      onChange={(e) =>
+                        updateOtherAdultName(index, e.target.value)
+                      }
+                      placeholder="Nome completo"
+                    />
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {attendingBool && childrenNum > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm text-texto/70">Nome das crianças</p>
+                {(form.childrenNames ?? []).map((name, index) => (
+                  <label className="block text-sm" key={`child-${index}`}>
+                    <span className="text-texto/60">Criança {index + 1}</span>
+                    <input
+                      required
+                      className="mt-1.5 w-full rounded-xl border border-bege-claro bg-cream/50 px-4 py-3 text-texto outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
+                      value={name}
+                      onChange={(e) => updateChildName(index, e.target.value)}
+                      placeholder="Nome completo"
+                    />
+                  </label>
+                ))}
               </div>
             )}
 

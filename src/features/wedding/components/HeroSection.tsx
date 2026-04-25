@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { BotanicalCorner } from "@/shared/components/BotanicalFrame";
+import { giftImageUrl } from "@/features/gifts/utils/giftImage";
 
 export function HeroSection() {
   return (
@@ -9,7 +10,7 @@ export function HeroSection() {
     >
       <div className="absolute inset-0 -z-10">
         <Image
-          src="https://images.unsplash.com/photo-1519741497674-611481863552?w=1920&q=80"
+          src={giftImageUrl("fergabe-hero-bg")}
           alt=""
           fill
           priority
@@ -32,7 +33,7 @@ export function HeroSection() {
           Save the date
         </p>
         <h1 className="font-display text-[clamp(2.5rem,8vw,4.75rem)] leading-[1.05] text-texto mb-4 animate-fade-up [animation-delay:140ms] opacity-0">
-          Fer <span className="text-salvia font-light">&</span> Gabe
+          Fer <span className="mx-2 align-middle text-texto/45">·</span> Gabe
         </h1>
         <p className="font-display text-xl sm:text-2xl md:text-3xl text-texto/85 mb-10 animate-fade-up [animation-delay:220ms] opacity-0">
           6 de junho de 2026

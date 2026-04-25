@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { giftImageUrl } from "@/features/gifts/utils/giftImage";
 import { SectionTitle } from "@/shared/components/SectionTitle";
 import { BotanicalCorner } from "@/shared/components/BotanicalFrame";
 
@@ -20,7 +21,7 @@ export function CoupleStorySection() {
             <div className="absolute -inset-3 rounded-[2rem] border border-white/80 bg-white/30 shadow-sm" />
             <div className="relative aspect-[4/5] rounded-[1.75rem] overflow-hidden shadow-md">
               <Image
-                src="https://images.unsplash.com/photo-1522673602040-b5a97d715434?w=900&q=80"
+                src={giftImageUrl("fergabe-couple-story")}
                 alt="Casal — imagem ilustrativa"
                 fill
                 className="object-cover"
