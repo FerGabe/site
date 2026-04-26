@@ -26,6 +26,7 @@ export type RsvpPayload = {
   attending: boolean;
   adults: number;
   children: number;
+  companionNames?: string[];
   message: string;
   createdAt: Timestamp;
 };

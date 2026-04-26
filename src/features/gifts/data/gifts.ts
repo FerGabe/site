@@ -1,8 +1,8 @@
 import type { GiftItem } from "../types/gift";
 import { assetPath } from "@/shared/utils/assetPath";
 
-/** Lista inicial de presentes (UI). */
-const BASE_WEDDING_GIFTS: GiftItem[] = [
+/** Lista base (caminhos relativos; `WEDDING_GIFTS` aplica `assetPath` nas imagens). */
+export const BASE_WEDDING_GIFTS: GiftItem[] = [
   { id: "jogo-copos", name: "Jogo de Copos", price: 120, image: "/gifts/jogo-copos.webp", category: "casa", active: true },
   { id: "ferro-passar", name: "Ferro de Passar", price: 130, image: "/gifts/ferro-passar.webp", category: "eletro", active: true },
   { id: "ventilador", name: "Ventilador", price: 135, image: "/gifts/ventilador.webp", category: "eletro", active: true },
@@ -23,6 +23,14 @@ const BASE_WEDDING_GIFTS: GiftItem[] = [
   { id: "jogo-panelas", name: "Jogo de Panelas", price: 430, image: "/gifts/jogo-panelas.webp", category: "cozinha", active: true },
   { id: "cortinas", name: "Cortinas", price: 470, image: "/gifts/cortinas.webp", category: "casa", active: true },
   { id: "kit-organizadores", name: "Kit Organizadores", price: 500, image: "/gifts/kit-organizadores.webp", category: "casa", active: true },
+  {
+    id: "cueca-noivo",
+    name: "Cueca do noivo",
+    price: 520,
+    image: "/gifts/cueca-noivo.webp",
+    category: "casa",
+    active: true,
+  },
   { id: "micro-ondas", name: "Micro-ondas", price: 550, image: "/gifts/micro-ondas.webp", category: "eletro", active: true },
   { id: "forno-eletrico", name: "Forno Elétrico", price: 620, image: "/gifts/forno-eletrico.webp", category: "eletro", active: true },
   { id: "purificador-agua", name: "Purificador de Água", price: 750, image: "/gifts/purificador-agua.webp", category: "eletro", active: true },

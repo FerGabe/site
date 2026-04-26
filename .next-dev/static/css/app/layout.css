@@ -804,6 +804,9 @@ video {
 .mt-auto {
   margin-top: auto;
 }
+.mt-1 {
+  margin-top: 0.25rem;
+}
 .block {
   display: block;
 }
@@ -879,6 +882,9 @@ video {
 .min-w-\[4\.5rem\] {
   min-width: 4.5rem;
 }
+.min-w-full {
+  min-width: 100%;
+}
 .max-w-2xl {
   max-width: 42rem;
 }
@@ -899,6 +905,12 @@ video {
 }
 .max-w-xl {
   max-width: 36rem;
+}
+.max-w-\[14rem\] {
+  max-width: 14rem;
+}
+.max-w-xs {
+  max-width: 20rem;
 }
 .flex-1 {
   flex: 1 1 0%;
@@ -938,6 +950,9 @@ video {
 }
 .resize-none {
   resize: none;
+}
+.resize-y {
+  resize: vertical;
 }
 .grid-cols-2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1004,6 +1019,9 @@ video {
   margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
   margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
 }
+.self-start {
+  align-self: flex-start;
+}
 .overflow-hidden {
   overflow: hidden;
 }
@@ -1012,6 +1030,9 @@ video {
 }
 .overflow-y-auto {
   overflow-y: auto;
+}
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
 }
 .text-balance {
   text-wrap: balance;
@@ -1117,6 +1138,9 @@ video {
 .border-white\/80 {
   border-color: rgb(255 255 255 / 0.8);
 }
+.border-bege-claro\/50 {
+  border-color: rgb(234 226 210 / 0.5);
+}
 .bg-bege-claro\/25 {
   background-color: rgb(234 226 210 / 0.25);
 }
@@ -1180,6 +1204,9 @@ video {
 }
 .bg-white\/80 {
   background-color: rgb(255 255 255 / 0.8);
+}
+.bg-cream\/80 {
+  background-color: rgb(247 245 240 / 0.8);
 }
 .bg-\[radial-gradient\(ellipse_at_top\2c rgba\(111\2c 125\2c 82\2c 0\.09\)\2c transparent_58\%\)\] {
   background-image: radial-gradient(ellipse at top,rgba(111,125,82,0.09),transparent 58%);
@@ -1364,6 +1391,10 @@ video {
   padding-top: 2rem;
   padding-bottom: 2rem;
 }
+.py-16 {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
 .pb-6 {
   padding-bottom: 1.5rem;
 }
@@ -1378,6 +1409,9 @@ video {
 }
 .text-center {
   text-align: center;
+}
+.align-top {
+  vertical-align: top;
 }
 .align-middle {
   vertical-align: middle;
@@ -1433,6 +1467,9 @@ video {
 }
 .uppercase {
   text-transform: uppercase;
+}
+.capitalize {
+  text-transform: capitalize;
 }
 .italic {
   font-style: italic;
@@ -1765,6 +1802,10 @@ body {
   border-color: rgb(156 170 124 / 0.6);
 }
 
+.hover\:border-oliva\/35:hover {
+  border-color: rgb(111 125 82 / 0.35);
+}
+
 .hover\:bg-bege-claro\/50:hover {
   background-color: rgb(234 226 210 / 0.5);
 }
@@ -1911,6 +1952,10 @@ body {
 
   .sm\:items-center {
     align-items: center;
+  }
+
+  .sm\:justify-between {
+    justify-content: space-between;
   }
 
   .sm\:gap-4 {

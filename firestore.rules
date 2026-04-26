@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Modelo mínimo para o site + painel /admin (Firebase Auth).
+// Ajuste conforme sua política de segurança — especialmente `gift_requests`.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /rsvps/{id} {
+      allow create: if true;
+      allow read: if request.auth != null;
+      allow update, delete: if false;
+    }
+
+    match /gift_requests/{id} {
+      // Site público: leitura para travar presentes na lista; escrita no fluxo de reserva.
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if false;
+    }
+
+    match /gifts/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}

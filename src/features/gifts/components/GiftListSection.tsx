@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { WEDDING_GIFTS } from "../data/gifts";
+import { useMergedGiftCatalog } from "../hooks/useMergedGiftCatalog";
 import { GiftModal } from "./GiftModal";
 import { GiftCarousel } from "./GiftCarousel";
 import type { GiftItem } from "../types/gift";
@@ -26,6 +26,7 @@ const SORTS: { id: PriceSort; label: string }[] = [
 ];
 
 export function GiftListSection() {
+  const { gifts: catalogGifts } = useMergedGiftCatalog();
   const [selected, setSelected] = useState<GiftItem | null>(null);
   const [band, setBand] = useState<PriceBand>("all");
   const [sort, setSort] = useState<PriceSort>("default");
@@ -33,8 +34,8 @@ export function GiftListSection() {
   const [permanentLocks, setPermanentLocks] = useState<Set<string>>(new Set());
 
   const base = useMemo(
-    () => WEDDING_GIFTS.filter((g) => g.active),
-    []
+    () => catalogGifts.filter((g) => g.active),
+    [catalogGifts]
   );
 
   const visible = useMemo(

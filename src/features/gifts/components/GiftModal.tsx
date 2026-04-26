@@ -72,7 +72,15 @@ export function GiftModal({ gift, onClose }: GiftModalProps) {
         ? formatBRL(resolvedValue)
         : "Valor a definir pelo convidado"
       : formatBRL(gift.price!);
-  const paymentInfo = GIFT_PAYMENT_BY_ID[gift.id];
+  const fallbackPay = GIFT_PAYMENT_BY_ID[gift.id];
+  const paymentInfo = {
+    pixCode: (gift.pixCode?.trim() || fallbackPay?.pixCode || "").trim(),
+    cardPaymentLink: (
+      gift.cardPaymentLink?.trim() ||
+      fallbackPay?.cardPaymentLink ||
+      ""
+    ).trim(),
+  };
 
   const validateForm = (): boolean => {
     if (!form.guestName.trim()) {
