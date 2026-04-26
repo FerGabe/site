@@ -153,10 +153,6 @@ export function GiftListSection() {
               ))}
             </div>
           </div>
-          <p className="text-xs text-texto/50 max-w-2xl">
-            &ldquo;Contribuição livre&rdquo; aparece só em &ldquo;Todos&rdquo;, pois o valor é
-            escolhido por você.
-          </p>
         </div>
 
         <GiftCarousel

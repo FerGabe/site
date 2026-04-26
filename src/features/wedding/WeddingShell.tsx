@@ -3,7 +3,6 @@
 import { Header } from "./components/Header";
 import { HeroSection } from "./components/HeroSection";
 import { CountdownSection } from "./components/CountdownSection";
-import { WelcomeSection } from "./components/WelcomeSection";
 import { CoupleStorySection } from "./components/CoupleStorySection";
 import { GiftListSection } from "@/features/gifts/components/GiftListSection";
 import { RSVPSection } from "@/features/rsvp/components/RSVPSection";
@@ -20,9 +19,6 @@ export function WeddingShell() {
         </MotionHero>
         <MotionReveal>
           <CountdownSection />
-        </MotionReveal>
-        <MotionReveal delay={0.05}>
-          <WelcomeSection />
         </MotionReveal>
         <MotionReveal delay={0.08}>
           <CoupleStorySection />

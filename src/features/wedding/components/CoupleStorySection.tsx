@@ -7,13 +7,13 @@ export function CoupleStorySection() {
   return (
     <section
       id="historia"
-      className="py-20 md:py-28 bg-bege-claro/40 border-y border-bege-areia/25"
+      className="py-20 md:py-28 bg-gradient-to-b from-bege-claro/35 via-bege-claro/40 to-cream/30 border-b border-bege-areia/25"
     >
       <div className="mx-auto max-w-6xl px-6">
         <SectionTitle
           eyebrow="Nossa história"
           title="De encontros simples a um sim eterno"
-          subtitle="Do primeiro café ao planejamento dos sonhos — cada passo nos ensinou que o amor verdadeiro é calmo, profundo e feito de presença."
+          subtitle="Do primeiro café aos planos de vida, aprendemos que o amor verdadeiro é calmo e cheio de presença."
         />
 
         <div className="grid gap-12 md:gap-16 md:grid-cols-2 items-center">
@@ -38,20 +38,12 @@ export function CoupleStorySection() {
             <p>
               <span className="font-display text-2xl text-oliva">Fer</span> e{" "}
               <span className="font-display text-2xl text-oliva">Gabe</span>{" "}
-              se encontraram em um daqueles dias em que o tempo parece
-              conspirar a favor: conversas longas, risos fáceis e a sensação de
-              que o mundo tinha encolhido só para caber dois.
+              se encontraram em um dia simples, com conversa leve, riso fácil e
+              uma conexão imediata.
             </p>
             <p>
-              Entre passeios sob o céu de estrelas e planos desenhados no
-              verso de guardanapos de papelaria, fomos costurando uma história
-              leve e profunda — como linho e renda no mesmo guarda-roupa.
-            </p>
-            <p>
-              Hoje, ao dizer &ldquo;sim&rdquo;, queremos celebrar não apenas o
-              casamento, mas cada pessoa que nos ajudou a chegar aqui. Esta
-              página é o nosso convite aberto: entrem, respirem fundo e sintam o
-              perfume das folhas novas.
+              Hoje, ao dizer &ldquo;sim&rdquo;, celebramos também cada pessoa que fez
+              parte da nossa caminhada até aqui.
             </p>
           </div>
         </div>
