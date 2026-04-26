@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { BotanicalCorner } from "@/shared/components/BotanicalFrame";
-import { MonogramMark } from "@/shared/components/MonogramMark";
 import { assetPath } from "@/shared/utils/assetPath";
 
 /** Quanto a foto “contraria” o scroll (maior = mais dinâmico). */
@@ -67,12 +66,9 @@ export function HeroSection() {
         <p className="font-display text-xs sm:text-sm tracking-[0.45em] uppercase text-oliva/90 mb-6 animate-fade-up [animation-delay:80ms] opacity-0">
           Save the date
         </p>
-        <div className="mb-4 flex justify-center animate-fade-up [animation-delay:140ms] opacity-0">
-          <MonogramMark
-            size={320}
-            className="h-40 w-auto sm:h-44 md:h-48"
-          />
-        </div>
+        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl text-oliva/95 tracking-tight mb-4 animate-fade-up [animation-delay:140ms] opacity-0">
+          Fernanda & Gabriel
+        </h1>
         <p className="font-display text-xl sm:text-2xl md:text-3xl text-texto/85 mb-10 animate-fade-up [animation-delay:220ms] opacity-0">
           6 de junho de 2026
         </p>
