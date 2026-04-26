@@ -1,20 +1,26 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Image from "next/image";
 import { BotanicalCorner } from "@/shared/components/BotanicalFrame";
 import { assetPath } from "@/shared/utils/assetPath";
 
-/** Quanto a foto acompanha o scroll. */
-const PARALLAX = 0.58;
+/** Intensidade do parallax (menor no mobile = menos repintura por frame). */
+const PARALLAX_DESKTOP = 0.52;
+const PARALLAX_MOBILE = 0.26;
+const MD_MIN = 768;
 
 export function HeroSection() {
-  /** Camada que move — atualizada no rAF via DOM (sem `setState`), scroll fluido no mobile. */
+  /** Camada que move — só `transform` no DOM no rAF (sem `setState`). Sem `filter` aqui: grayscale em foto grande travava o scroll no telemóvel. */
   const parallaxRef = useRef<HTMLDivElement>(null);
   const lastY = useRef(0);
 
   useEffect(() => {
     let raf = 0;
+
+    const parallaxFactor = () =>
+      typeof window !== "undefined" && window.innerWidth < MD_MIN
+        ? PARALLAX_MOBILE
+        : PARALLAX_DESKTOP;
 
     const apply = () => {
       raf = 0;
@@ -24,10 +30,10 @@ export function HeroSection() {
       const reduce =
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const nextY = reduce ? 0 : window.scrollY * PARALLAX;
-      if (nextY === lastY.current) return;
+      const nextY = reduce ? 0 : window.scrollY * parallaxFactor();
+      if (Number.isFinite(lastY.current) && nextY === lastY.current) return;
       lastY.current = nextY;
-      el.style.transform = `translate3d(0, ${nextY}px, 0) scale(1.05)`;
+      el.style.transform = `translate3d(0, ${nextY}px, 0) scale(1.06)`;
     };
 
     const onScroll = () => {
@@ -35,12 +41,17 @@ export function HeroSection() {
       raf = requestAnimationFrame(apply);
     };
 
+    const onResize = () => {
+      lastY.current = Number.NaN;
+      onScroll();
+    };
+
     apply();
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
+    window.addEventListener("resize", onResize, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("resize", onResize);
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
@@ -48,22 +59,23 @@ export function HeroSection() {
   return (
     <section
       id="topo"
-      className="relative flex min-h-[92dvh] flex-col overflow-hidden bg-botanical-fade pt-28 max-md:pb-0 md:min-h-[92vh] md:justify-center md:pt-0 md:pb-0"
+      className="relative flex min-h-[92dvh] flex-col overflow-x-clip overflow-y-visible bg-botanical-fade pt-28 max-md:pb-0 md:min-h-[92vh] md:overflow-hidden md:justify-center md:pt-0 md:pb-0"
     >
       <div className="absolute inset-0 -z-10">
         <div
           ref={parallaxRef}
-          className="absolute inset-0 will-change-transform"
-          style={{ transform: "translate3d(0, 0px, 0) scale(1.05)" }}
+          className="absolute inset-0 md:will-change-transform"
+          style={{ transform: "translate3d(0, 0px, 0) scale(1.06)" }}
         >
-          <Image
+          {/* `img` nativo: menos camadas que `next/image` durante parallax; sem `filter` na camada animada. */}
+          <img
             src={assetPath("/couple/casal-real.png")}
             alt=""
-            fill
-            priority
-            className="object-cover object-[center_60%] grayscale"
-            style={{ opacity: 0.34 }}
-            sizes="100vw"
+            width={1920}
+            height={1280}
+            fetchPriority="high"
+            decoding="async"
+            className="pointer-events-none absolute left-0 right-0 top-[-7%] h-[114%] w-full object-cover object-[center_58%] opacity-[0.34]"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-cream/75 via-cream/70 to-cream/78" />

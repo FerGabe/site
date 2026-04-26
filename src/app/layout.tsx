@@ -44,6 +44,14 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${display.variable} ${sans.variable} ${heroName.variable}`}
     >
+      <head>
+        <link
+          rel="preload"
+          href={assetPath("/brand/monogram-transparent.png")}
+          as="image"
+          type="image/png"
+        />
+      </head>
       <body className="min-h-screen">
         <UnhandledRejectionGuard />
         {children}

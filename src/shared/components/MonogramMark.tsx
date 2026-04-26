@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { assetPath } from "@/shared/utils/assetPath";
 
 type MonogramMarkProps = {
@@ -6,15 +5,18 @@ type MonogramMarkProps = {
   size?: number;
 };
 
+/** `<img>` nativo: aparece logo no header (sem esperar o pipeline do `next/image`). */
 export function MonogramMark({ className = "", size = 96 }: MonogramMarkProps) {
   return (
-    <Image
+    <img
       src={assetPath("/brand/monogram-transparent.png")}
-      aria-label="Monograma Fer e Gabe"
       alt="Monograma Fer e Gabe"
-      width={1024}
-      height={845}
-      className={`h-auto w-auto object-contain ${className}`}
+      width={160}
+      height={132}
+      loading="eager"
+      decoding="async"
+      fetchPriority="high"
+      className={`h-auto w-auto shrink-0 object-contain ${className}`}
       style={{ maxHeight: size }}
     />
   );
