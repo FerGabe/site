@@ -1,22 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { BotanicalCorner } from "@/shared/components/BotanicalFrame";
 import { assetPath } from "@/shared/utils/assetPath";
 
-/** Quanto a foto “contraria” o scroll (maior = mais dinâmico). Só em `md+` — no mobile fica fixo para scroll fluido. */
+/** Quanto a foto acompanha o scroll. */
 const PARALLAX = 0.58;
-const MD_MIN_PX = 768;
-
-function parallaxDisabled(): boolean {
-  if (typeof window === "undefined") return true;
-  if (window.innerWidth < MD_MIN_PX) return true;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
 
 export function HeroSection() {
-  const [bgTranslateY, setBgTranslateY] = useState(0);
+  /** Camada que move — atualizada no rAF via DOM (sem `setState`), scroll fluido no mobile. */
+  const parallaxRef = useRef<HTMLDivElement>(null);
   const lastY = useRef(0);
 
   useEffect(() => {
@@ -24,10 +18,16 @@ export function HeroSection() {
 
     const apply = () => {
       raf = 0;
-      const nextY = parallaxDisabled() ? 0 : window.scrollY * PARALLAX;
+      const el = parallaxRef.current;
+      if (!el) return;
+
+      const reduce =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const nextY = reduce ? 0 : window.scrollY * PARALLAX;
       if (nextY === lastY.current) return;
       lastY.current = nextY;
-      setBgTranslateY(nextY);
+      el.style.transform = `translate3d(0, ${nextY}px, 0) scale(1.05)`;
     };
 
     const onScroll = () => {
@@ -51,18 +51,21 @@ export function HeroSection() {
       className="relative flex min-h-[92dvh] flex-col overflow-hidden bg-botanical-fade pt-28 max-md:pb-0 md:min-h-[92vh] md:justify-center md:pt-0 md:pb-0"
     >
       <div className="absolute inset-0 -z-10">
-        <Image
-          src={assetPath("/couple/casal-real.png")}
-          alt=""
-          fill
-          priority
-          className="object-cover object-[center_60%] scale-105 grayscale md:will-change-transform"
-          style={{
-            opacity: 0.34,
-            transform: `translate3d(0, ${bgTranslateY}px, 0) scale(1.05)`,
-          }}
-          sizes="100vw"
-        />
+        <div
+          ref={parallaxRef}
+          className="absolute inset-0 will-change-transform"
+          style={{ transform: "translate3d(0, 0px, 0) scale(1.05)" }}
+        >
+          <Image
+            src={assetPath("/couple/casal-real.png")}
+            alt=""
+            fill
+            priority
+            className="object-cover object-[center_60%] grayscale"
+            style={{ opacity: 0.34 }}
+            sizes="100vw"
+          />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-b from-cream/75 via-cream/70 to-cream/78" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(111,125,82,0.09),transparent_58%)]" />
       </div>
