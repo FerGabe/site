@@ -1,5 +1,4 @@
 import type { GiftItem } from "../types/gift";
-import { giftImageUrl } from "../utils/giftImage";
 
 /** Lista inicial de presentes (UI). */
 export const WEDDING_GIFTS: GiftItem[] = [
@@ -17,20 +16,20 @@ export const WEDDING_GIFTS: GiftItem[] = [
   { id: "liquidificador", name: "Liquidificador", price: 270, image: "/gifts/liquidificador.png", category: "eletro", active: true },
   { id: "jogo-lencol", name: "Jogo de Lençol", price: 290, image: "/gifts/jogo-lencol.png", category: "casa", active: true },
   { id: "kit-utensilios-cozinha", name: "Kit Utensílios de Cozinha", price: 310, image: "/gifts/kit-utensilios-cozinha.png", category: "cozinha", active: true },
-  { id: "kit-banheiro", name: "Kit Banheiro", price: 330, image: giftImageUrl("bathroom accessories set"), category: "casa", active: true },
-  { id: "edredom", name: "Edredom", price: 350, image: giftImageUrl("duvet bed"), category: "casa", active: true },
-  { id: "air-fryer", name: "Air Fryer", price: 390, image: giftImageUrl("air fryer appliance kitchen"), category: "eletro", active: true },
-  { id: "jogo-panelas", name: "Jogo de Panelas", price: 430, image: giftImageUrl("cookware pots pans set"), category: "cozinha", active: true },
-  { id: "cortinas", name: "Cortinas", price: 470, image: giftImageUrl("living room curtains"), category: "casa", active: true },
-  { id: "kit-organizadores", name: "Kit Organizadores", price: 500, image: giftImageUrl("closet organizer"), category: "casa", active: true },
-  { id: "micro-ondas", name: "Micro-ondas", price: 550, image: giftImageUrl("microwave oven"), category: "eletro", active: true },
-  { id: "forno-eletrico", name: "Forno Elétrico", price: 620, image: giftImageUrl("electric oven"), category: "eletro", active: true },
-  { id: "purificador-agua", name: "Purificador de Água", price: 750, image: giftImageUrl("water purifier"), category: "eletro", active: true },
-  { id: "mesa-lateral", name: "Mesa Lateral", price: 850, image: giftImageUrl("side table"), category: "casa", active: true },
-  { id: "jogo-malas", name: "Jogo de Malas", price: 950, image: giftImageUrl("luggage set"), category: "lua-de-mel", active: true },
-  { id: "smart-tv-pequena", name: "Smart TV Pequena", price: 1500, image: giftImageUrl("small smart tv"), category: "eletro", active: true },
-  { id: "lavadora-roupas", name: "Lavadora de Roupas", price: 2400, image: giftImageUrl("washing machine"), category: "eletro", active: true },
-  { id: "ar-condicionado", name: "Ar Condicionado", price: 2500, image: giftImageUrl("air conditioner"), category: "eletro", active: true },
-  { id: "geladeira", name: "Geladeira", price: 2600, image: giftImageUrl("refrigerator kitchen"), category: "eletro", active: true },
-  { id: "viagem-lua-mel", name: "Viagem Lua de Mel", price: 3000, image: giftImageUrl("honeymoon trip beach"), category: "lua-de-mel", active: true },
+  { id: "kit-banheiro", name: "Kit Banheiro", price: 330, image: "/gifts/kit-banheiro.png", category: "casa", active: true },
+  { id: "edredom", name: "Edredom", price: 350, image: "/gifts/edredom.png", category: "casa", active: true },
+  { id: "air-fryer", name: "Air Fryer", price: 390, image: "/gifts/air-fryer.png", category: "eletro", active: true },
+  { id: "jogo-panelas", name: "Jogo de Panelas", price: 430, image: "/gifts/jogo-panelas.png", category: "cozinha", active: true },
+  { id: "cortinas", name: "Cortinas", price: 470, image: "/gifts/cortinas.png", category: "casa", active: true },
+  { id: "kit-organizadores", name: "Kit Organizadores", price: 500, image: "/gifts/kit-organizadores.png", category: "casa", active: true },
+  { id: "micro-ondas", name: "Micro-ondas", price: 550, image: "/gifts/micro-ondas.png", category: "eletro", active: true },
+  { id: "forno-eletrico", name: "Forno Elétrico", price: 620, image: "/gifts/forno-eletrico.png", category: "eletro", active: true },
+  { id: "purificador-agua", name: "Purificador de Água", price: 750, image: "/gifts/purificador-agua.png", category: "eletro", active: true },
+  { id: "mesa-lateral", name: "Mesa Lateral", price: 850, image: "/gifts/mesa-lateral.png", category: "casa", active: true },
+  { id: "jogo-malas", name: "Jogo de Malas", price: 950, image: "/gifts/jogo-malas.png", category: "lua-de-mel", active: true },
+  { id: "smart-tv-pequena", name: "Smart TV Pequena", price: 1500, image: "/gifts/smart-tv-pequena.png", category: "eletro", active: true },
+  { id: "lavadora-roupas", name: "Lavadora de Roupas", price: 2400, image: "/gifts/lavadora-roupas.png", category: "eletro", active: true },
+  { id: "sofa", name: "Sofá", price: 2500, image: "/gifts/sofa.png", category: "casa", active: true },
+  { id: "geladeira", name: "Geladeira", price: 2600, image: "/gifts/geladeira.png", category: "eletro", active: true },
+  { id: "viagem-lua-mel", name: "Viagem Lua de Mel", price: 3000, image: "/gifts/viagem-lua-mel.png", category: "lua-de-mel", active: true },
 ];

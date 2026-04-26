@@ -69,7 +69,7 @@ export function HeroSection() {
         <div className="mb-4 flex justify-center animate-fade-up [animation-delay:140ms] opacity-0">
           <MonogramMark
             size={320}
-            className="h-40 w-40 sm:h-44 sm:w-44 md:h-48 md:w-48"
+            className="h-40 w-auto sm:h-44 md:h-48"
           />
         </div>
         <p className="font-display text-xl sm:text-2xl md:text-3xl text-texto/85 mb-10 animate-fade-up [animation-delay:220ms] opacity-0">

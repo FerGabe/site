@@ -25,7 +25,7 @@ export function GiftCard({
   return (
     <article
       className={`group relative flex h-full flex-col rounded-[1.35rem] border border-bege-claro/80 bg-white/70 shadow-sm hover:shadow-md hover:border-salvia/35 transition-all duration-500 overflow-hidden ${
-        layout === "carousel" ? "min-h-[26rem]" : ""
+        layout === "carousel" ? "min-h-[19.5rem] sm:min-h-[26rem]" : ""
       }`}
     >
       <div className="relative aspect-[5/4] overflow-hidden">

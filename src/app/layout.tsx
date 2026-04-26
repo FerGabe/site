@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
+import { UnhandledRejectionGuard } from "@/shared/components/UnhandledRejectionGuard";
 import "./globals.css";
 
 const display = Playfair_Display({
@@ -19,9 +20,9 @@ export const metadata: Metadata = {
   description:
     "Com muito amor, convidamos você a celebrar conosco o nosso casamento.",
   icons: {
-    icon: "/brand/favicon.svg",
-    shortcut: "/brand/favicon.svg",
-    apple: "/brand/favicon.svg",
+    icon: "/brand/favicon.png",
+    shortcut: "/brand/favicon.png",
+    apple: "/brand/favicon.png",
   },
 };
 
@@ -32,7 +33,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={`${display.variable} ${sans.variable}`}>
-      <body className="min-h-screen">{children}</body>
+      <body className="min-h-screen">
+        <UnhandledRejectionGuard />
+        {children}
+      </body>
     </html>
   );
 }

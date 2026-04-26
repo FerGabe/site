@@ -9,6 +9,8 @@ import type { PaymentMethod } from "@/shared/types/firestore";
 
 type PaymentChoiceProps = {
   method: PaymentMethod;
+  pixCode?: string;
+  cardPaymentLink?: string;
   onReserve: () => Promise<void>;
   onConfirmPaid: () => void;
   disabled?: boolean;
@@ -25,6 +27,8 @@ function getPixKey(): string {
 
 export function PaymentChoice({
   method,
+  pixCode,
+  cardPaymentLink,
   onReserve,
   onConfirmPaid,
   disabled,
@@ -33,7 +37,8 @@ export function PaymentChoice({
   hasReserved,
 }: PaymentChoiceProps) {
   const [copied, setCopied] = useState(false);
-  const pixKey = getPixKey();
+  const pixKey = pixCode?.trim() || getPixKey();
+  const cardLink = cardPaymentLink?.trim() || INFINITEPAY_PAYMENT_LINK;
 
   const copyPix = async () => {
     try {
@@ -49,7 +54,7 @@ export function PaymentChoice({
   const handleCardPay = async () => {
     try {
       await onReserve();
-      window.open(INFINITEPAY_PAYMENT_LINK, "_blank", "noopener,noreferrer");
+      window.open(cardLink, "_blank", "noopener,noreferrer");
     } catch {
       /* Erro já tratado no modal (reserva). */
     }

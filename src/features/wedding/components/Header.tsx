@@ -33,7 +33,7 @@ export function Header() {
           className="inline-flex items-center rounded-xl transition-opacity hover:opacity-85"
           aria-label="Fer e Gabe"
         >
-          <MonogramMark size={52} className="h-11 w-11 md:h-12 md:w-12" />
+          <MonogramMark size={52} className="h-11 w-auto md:h-12" />
         </a>
         <nav className="flex flex-1 justify-center md:justify-end items-center gap-4 md:gap-8 text-xs md:text-sm tracking-wide text-texto/80 overflow-x-auto no-scrollbar">
           {links.map((l) => (
@@ -46,12 +46,6 @@ export function Header() {
             </a>
           ))}
         </nav>
-        <a
-          href="#rsvp"
-          className="rounded-full border border-oliva/40 bg-white/70 px-4 py-2 text-xs md:text-sm tracking-wide text-oliva hover:bg-oliva hover:text-white hover:border-oliva transition-all"
-        >
-          RSVP
-        </a>
       </div>
     </header>
   );

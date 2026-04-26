@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useState } from "react";
 import type { GiftItem } from "../types/gift";
 import { formatBRL } from "../utils/format";
 import { PaymentChoice } from "./PaymentChoice";
+import { GIFT_PAYMENT_BY_ID } from "../data/giftPaymentById";
 import {
   confirmGiftPaymentById,
   createGiftReservation,
@@ -72,6 +73,7 @@ export function GiftModal({ gift, onClose }: GiftModalProps) {
         ? formatBRL(resolvedValue)
         : "Valor a definir pelo convidado"
       : formatBRL(gift.price!);
+  const paymentInfo = GIFT_PAYMENT_BY_ID[gift.id];
 
   const validateForm = (): boolean => {
     if (!form.guestName.trim()) {
@@ -334,6 +336,8 @@ export function GiftModal({ gift, onClose }: GiftModalProps) {
               ) : null}
               <PaymentChoice
                 method={form.paymentMethod}
+                pixCode={paymentInfo?.pixCode}
+                cardPaymentLink={paymentInfo?.cardPaymentLink}
                 onReserve={handleReserve}
                 onConfirmPaid={() => {
                   void handleConfirmPaid();
