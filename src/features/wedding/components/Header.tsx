@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { MonogramMark } from "@/shared/components/MonogramMark";
 
 const links = [
@@ -28,13 +29,13 @@ export function Header() {
       }`}
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-3 gap-x-4 px-5 py-4 md:px-8">
-        <a
-          href="#topo"
+        <Link
+          href="/admin"
           className="inline-flex items-center rounded-xl transition-opacity hover:opacity-85"
-          aria-label="Fer e Gabe"
+          aria-label="Área administrativa"
         >
           <MonogramMark size={52} className="h-11 w-auto md:h-12" />
-        </a>
+        </Link>
         <nav className="flex flex-1 justify-center md:justify-end items-center gap-4 md:gap-8 text-xs md:text-sm tracking-wide text-texto/80 overflow-x-auto no-scrollbar">
           {links.map((l) => (
             <a

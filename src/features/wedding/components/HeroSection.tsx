@@ -1,23 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { BotanicalCorner } from "@/shared/components/BotanicalFrame";
 import { assetPath } from "@/shared/utils/assetPath";
 
-/** Quanto a foto “contraria” o scroll (maior = mais dinâmico). */
+/** Quanto a foto “contraria” o scroll (maior = mais dinâmico). Só em `md+` — no mobile fica fixo para scroll fluido. */
 const PARALLAX = 0.58;
+const MD_MIN_PX = 768;
+
+function parallaxDisabled(): boolean {
+  if (typeof window === "undefined") return true;
+  if (window.innerWidth < MD_MIN_PX) return true;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 export function HeroSection() {
   const [bgTranslateY, setBgTranslateY] = useState(0);
+  const lastY = useRef(0);
 
   useEffect(() => {
     let raf = 0;
 
     const apply = () => {
       raf = 0;
-      /* Scroll para baixo → a foto acompanha “descendo” (mesmo sentido), sem limite artificial. */
-      setBgTranslateY(window.scrollY * PARALLAX);
+      const nextY = parallaxDisabled() ? 0 : window.scrollY * PARALLAX;
+      if (nextY === lastY.current) return;
+      lastY.current = nextY;
+      setBgTranslateY(nextY);
     };
 
     const onScroll = () => {
@@ -27,8 +37,10 @@ export function HeroSection() {
 
     apply();
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
@@ -44,10 +56,10 @@ export function HeroSection() {
           alt=""
           fill
           priority
-          className="object-cover object-[center_60%] scale-105 grayscale will-change-transform"
+          className="object-cover object-[center_60%] scale-105 grayscale md:will-change-transform"
           style={{
             opacity: 0.34,
-            transform: `translateY(${bgTranslateY}px) scale(1.05)`,
+            transform: `translate3d(0, ${bgTranslateY}px, 0) scale(1.05)`,
           }}
           sizes="100vw"
         />

@@ -22,7 +22,14 @@ export const BASE_WEDDING_GIFTS: GiftItem[] = [
   { id: "air-fryer", name: "Air Fryer", price: 390, image: "/gifts/air-fryer.webp", category: "eletro", active: true },
   { id: "jogo-panelas", name: "Jogo de Panelas", price: 430, image: "/gifts/jogo-panelas.webp", category: "cozinha", active: true },
   { id: "cortinas", name: "Cortinas", price: 470, image: "/gifts/cortinas.webp", category: "casa", active: true },
-  { id: "kit-organizadores", name: "Kit Organizadores", price: 500, image: "/gifts/kit-organizadores.webp", category: "casa", active: true },
+  {
+    id: "kit-organizadores",
+    name: "Kit Organizadores",
+    price: 500,
+    image: "/gifts/kit-organizadores.webp",
+    category: "casa",
+    active: false,
+  },
   {
     id: "cueca-noivo",
     name: "Cueca do noivo",
