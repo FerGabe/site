@@ -21,8 +21,8 @@ export function CoupleStorySection() {
             <div className="absolute -inset-3 rounded-[2rem] border border-white/80 bg-white/30 shadow-sm" />
             <div className="relative aspect-[4/5] rounded-[1.75rem] overflow-hidden shadow-md">
               <Image
-                src={assetPath("/couple/casal-real.png")}
-                alt="Casal — imagem ilustrativa"
+                src={assetPath("/couple/brunostierrr-4.webp")}
+                alt="Fernanda e Gabriel"
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"

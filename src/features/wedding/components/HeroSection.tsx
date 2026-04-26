@@ -36,7 +36,7 @@ export function HeroSection() {
   return (
     <section
       id="topo"
-      className="relative min-h-[92vh] flex flex-col justify-end md:justify-center overflow-hidden bg-botanical-fade"
+      className="relative flex min-h-[92dvh] flex-col overflow-hidden bg-botanical-fade pt-28 max-md:pb-0 md:min-h-[92vh] md:justify-center md:pt-0 md:pb-0"
     >
       <div className="absolute inset-0 -z-10">
         <Image
@@ -62,32 +62,34 @@ export function HeroSection() {
         <BotanicalCorner className="w-24 md:w-32" flip />
       </div>
 
-      <div className="mx-auto max-w-5xl px-6 pb-20 pt-36 md:pt-28 md:pb-28 text-center">
-        <p className="font-display text-xs sm:text-sm tracking-[0.45em] uppercase text-oliva/90 mb-6 animate-fade-up [animation-delay:80ms] opacity-0">
-          Save the date
-        </p>
-        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl text-oliva/95 tracking-tight mb-4 animate-fade-up [animation-delay:140ms] opacity-0">
-          Fernanda & Gabriel
-        </h1>
-        <p className="font-display text-xl sm:text-2xl md:text-3xl text-texto/85 mb-10 animate-fade-up [animation-delay:220ms] opacity-0">
-          6 de junho de 2026
-        </p>
-        <p className="max-w-xl mx-auto text-base md:text-lg text-texto/70 leading-relaxed animate-fade-up [animation-delay:300ms] opacity-0">
-          Um convite feito à mão, em papel fino — para que você faça parte do
-          nosso mais belo capítulo.
-        </p>
-        <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up [animation-delay:380ms] opacity-0">
-          <a
-            href="#rsvp"
-            className="inline-flex items-center justify-center rounded-full bg-oliva px-8 py-3.5 text-sm tracking-wide text-white shadow-sm hover:bg-oliva/90 transition-all hover:shadow-md"
-          >
-            Confirmar presença
-          </a>
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 pb-6 text-center max-md:min-h-0 md:flex-none md:py-28 md:pb-28">
+        <div className="max-md:pt-10">
+          <p className="font-display text-xs sm:text-sm tracking-[0.45em] uppercase text-oliva/90 mb-6 animate-fade-up [animation-delay:80ms] opacity-0">
+            Save the date
+          </p>
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl text-oliva/95 tracking-tight mb-4 animate-fade-up [animation-delay:140ms] opacity-0">
+            Fernanda & Gabriel
+          </h1>
+          <p className="font-display text-xl sm:text-2xl md:text-3xl text-texto/85 mb-10 animate-fade-up [animation-delay:220ms] opacity-0">
+            6 de junho de 2026
+          </p>
+          <p className="max-w-xl mx-auto text-base md:text-lg text-texto/70 leading-relaxed animate-fade-up [animation-delay:300ms] opacity-0">
+            Um convite feito à mão, em papel fino — para que você faça parte do
+            nosso mais belo capítulo.
+          </p>
+        </div>
+        <div className="mt-auto flex flex-col items-center justify-center gap-4 pt-10 max-md:pb-10 sm:mt-12 sm:flex-row sm:pb-0 animate-fade-up [animation-delay:380ms] opacity-0">
           <a
             href="#presentes"
-            className="inline-flex items-center justify-center rounded-full border border-bege-areia bg-white/60 px-8 py-3.5 text-sm tracking-wide text-texto hover:border-oliva/50 transition-all"
+            className="inline-flex items-center justify-center rounded-full bg-oliva px-8 py-3.5 text-sm tracking-wide text-white shadow-sm hover:bg-oliva/90 transition-all hover:shadow-md"
           >
             Lista de presentes
+          </a>
+          <a
+            href="#rsvp"
+            className="inline-flex items-center justify-center rounded-full border border-bege-areia bg-white/60 px-8 py-3.5 text-sm tracking-wide text-texto hover:border-oliva/50 transition-all"
+          >
+            Confirmar presença
           </a>
         </div>
       </div>

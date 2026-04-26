@@ -120,24 +120,6 @@ export function PaymentChoice({
         </p>
       ) : null}
 
-      <div className="flex flex-col items-center gap-3">
-        <p className="text-xs uppercase tracking-[0.2em] text-texto/50">
-          QR Code (exemplo)
-        </p>
-        <div className="relative h-40 w-40 rounded-xl border-2 border-dashed border-bege-areia/80 bg-white flex items-center justify-center overflow-hidden">
-          <div
-            className="absolute inset-2 opacity-[0.15]"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(0deg,#6F7D52,#6F7D52 2px,transparent 2px,transparent 6px),repeating-linear-gradient(90deg,#6F7D52,#6F7D52 2px,transparent 2px,transparent 6px)",
-            }}
-          />
-          <span className="relative text-[10px] tracking-widest uppercase text-texto/40 text-center px-2">
-            Placeholder
-          </span>
-        </div>
-      </div>
-
       <button
         type="button"
         onClick={onConfirmPaid}

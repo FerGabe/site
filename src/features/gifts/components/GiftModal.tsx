@@ -20,7 +20,6 @@ type GiftModalProps = {
 
 const initialForm = {
   guestName: "",
-  guestWhatsapp: "",
   message: "",
   paymentMethod: "pix" as PaymentMethod,
   openAmount: "",
@@ -78,10 +77,6 @@ export function GiftModal({ gift, onClose }: GiftModalProps) {
   const validateForm = (): boolean => {
     if (!form.guestName.trim()) {
       setError("Informe seu nome.");
-      return false;
-    }
-    if (!form.guestWhatsapp.trim()) {
-      setError("Informe seu WhatsApp.");
       return false;
     }
     if (gift.openAmount || gift.price === null) {
@@ -142,7 +137,7 @@ export function GiftModal({ gift, onClose }: GiftModalProps) {
         giftName: gift.name,
         giftValue: resolvedValue,
         guestName: form.guestName,
-        guestWhatsapp: form.guestWhatsapp,
+        guestWhatsapp: "",
         message: form.message,
         paymentMethod: form.paymentMethod,
       });
@@ -245,17 +240,6 @@ export function GiftModal({ gift, onClose }: GiftModalProps) {
                     placeholder="Seu nome completo"
                   />
                 </label>
-                <label className="block text-sm">
-                  <span className="text-texto/70">WhatsApp</span>
-                  <input
-                    className="mt-1.5 w-full rounded-xl border border-bege-claro bg-white/80 px-4 py-3 text-texto outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
-                    value={form.guestWhatsapp}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, guestWhatsapp: e.target.value }))
-                    }
-                    placeholder="(00) 00000-0000"
-                  />
-                </label>
                 {(gift.openAmount || gift.price === null) && (
                   <label className="block text-sm">
                     <span className="text-texto/70">Valor (R$)</span>
@@ -271,7 +255,9 @@ export function GiftModal({ gift, onClose }: GiftModalProps) {
                   </label>
                 )}
                 <label className="block text-sm">
-                  <span className="text-texto/70">Mensagem para os noivos</span>
+                  <span className="text-texto/70">
+                    Mensagem para os noivos (opcional)
+                  </span>
                   <textarea
                     rows={3}
                     className="mt-1.5 w-full resize-none rounded-xl border border-bege-claro bg-white/80 px-4 py-3 text-texto outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
