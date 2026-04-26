@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter } from "next/font/google";
+import { Cormorant_Garamond, Inter, Playfair_Display } from "next/font/google";
 import { UnhandledRejectionGuard } from "@/shared/components/UnhandledRejectionGuard";
 import { assetPath } from "@/shared/utils/assetPath";
 import "./globals.css";
@@ -13,6 +13,13 @@ const display = Playfair_Display({
 const sans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+/** Tipografia do nome no hero (Cormorant Garamond). */
+const heroName = Cormorant_Garamond({
+  subsets: ["latin"],
+  variable: "--font-hero-name",
   display: "swap",
 });
 
@@ -33,7 +40,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${display.variable} ${sans.variable}`}>
+    <html
+      lang="pt-BR"
+      className={`${display.variable} ${sans.variable} ${heroName.variable}`}
+    >
       <body className="min-h-screen">
         <UnhandledRejectionGuard />
         {children}

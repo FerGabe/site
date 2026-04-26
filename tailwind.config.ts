@@ -21,6 +21,13 @@ const config: Config = {
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        /** Nome no hero — Cormorant Garamond (`src/app/layout.tsx`). */
+        "hero-name": [
+          "var(--font-hero-name)",
+          "var(--font-display)",
+          "Georgia",
+          "serif",
+        ],
       },
       backgroundImage: {
         "botanical-fade":

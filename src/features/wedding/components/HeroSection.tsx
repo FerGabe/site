@@ -67,7 +67,7 @@ export function HeroSection() {
           <p className="font-display text-xs sm:text-sm tracking-[0.45em] uppercase text-oliva/90 mb-6 animate-fade-up [animation-delay:80ms] opacity-0">
             Save the date
           </p>
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl text-oliva/95 tracking-tight mb-4 animate-fade-up [animation-delay:140ms] opacity-0">
+          <h1 className="font-hero-name text-3xl sm:text-4xl md:text-5xl text-oliva/95 tracking-tight mb-4 animate-fade-up [animation-delay:140ms] opacity-0">
             Fernanda & Gabriel
           </h1>
           <p className="font-display text-xl sm:text-2xl md:text-3xl text-texto/85 mb-10 animate-fade-up [animation-delay:220ms] opacity-0">

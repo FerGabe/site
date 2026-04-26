@@ -35,25 +35,25 @@ export function BotanicalCorner({
 export function BotanicalDivider({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`flex items-center justify-center gap-4 py-2 ${className}`}
+      className={`flex items-center justify-center gap-3 sm:gap-4 py-2 ${className}`}
       aria-hidden
     >
-      <span className="h-px w-16 bg-gradient-to-r from-transparent to-bege-areia/80" />
+      <span className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent via-bege-areia/70 to-bege-areia/35" />
       <svg
-        width="28"
-        height="12"
-        viewBox="0 0 28 12"
+        width="10"
+        height="14"
+        viewBox="0 0 10 14"
         fill="none"
-        className="text-oliva/50"
+        className="shrink-0 text-oliva/45"
       >
         <path
-          d="M4 6h20M14 2v8"
+          d="M5 1v12M2 5h6"
           stroke="currentColor"
-          strokeWidth="1"
+          strokeWidth="0.9"
           strokeLinecap="round"
         />
       </svg>
-      <span className="h-px w-16 bg-gradient-to-l from-transparent to-bege-areia/80" />
+      <span className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent via-bege-areia/70 to-bege-areia/35" />
     </div>
   );
 }
