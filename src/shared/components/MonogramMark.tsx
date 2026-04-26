@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { assetPath } from "@/shared/utils/assetPath";
 
 type MonogramMarkProps = {
   className?: string;
@@ -8,7 +9,7 @@ type MonogramMarkProps = {
 export function MonogramMark({ className = "", size = 96 }: MonogramMarkProps) {
   return (
     <Image
-      src="/brand/monogram-transparent.png"
+      src={assetPath("/brand/monogram-transparent.png")}
       aria-label="Monograma Fer e Gabe"
       alt="Monograma Fer e Gabe"
       width={1024}

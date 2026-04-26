@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
 import { UnhandledRejectionGuard } from "@/shared/components/UnhandledRejectionGuard";
+import { assetPath } from "@/shared/utils/assetPath";
 import "./globals.css";
 
 const display = Playfair_Display({
@@ -20,9 +21,9 @@ export const metadata: Metadata = {
   description:
     "Com muito amor, convidamos você a celebrar conosco o nosso casamento.",
   icons: {
-    icon: "/brand/favicon.png",
-    shortcut: "/brand/favicon.png",
-    apple: "/brand/favicon.png",
+    icon: assetPath("/brand/favicon.png"),
+    shortcut: assetPath("/brand/favicon.png"),
+    apple: assetPath("/brand/favicon.png"),
   },
 };
 

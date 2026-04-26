@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { BotanicalCorner } from "@/shared/components/BotanicalFrame";
 import { MonogramMark } from "@/shared/components/MonogramMark";
+import { assetPath } from "@/shared/utils/assetPath";
 
 /** Quanto a foto “contraria” o scroll (maior = mais dinâmico). */
 const PARALLAX = 0.58;
@@ -40,7 +41,7 @@ export function HeroSection() {
     >
       <div className="absolute inset-0 -z-10">
         <Image
-          src="/couple/casal-real.png"
+          src={assetPath("/couple/casal-real.png")}
           alt=""
           fill
           priority

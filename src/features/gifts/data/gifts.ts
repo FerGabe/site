@@ -1,7 +1,8 @@
 import type { GiftItem } from "../types/gift";
+import { assetPath } from "@/shared/utils/assetPath";
 
 /** Lista inicial de presentes (UI). */
-export const WEDDING_GIFTS: GiftItem[] = [
+const BASE_WEDDING_GIFTS: GiftItem[] = [
   { id: "jogo-copos", name: "Jogo de Copos", price: 120, image: "/gifts/jogo-copos.png", category: "casa", active: true },
   { id: "ferro-passar", name: "Ferro de Passar", price: 130, image: "/gifts/ferro-passar.png", category: "eletro", active: true },
   { id: "ventilador", name: "Ventilador", price: 135, image: "/gifts/ventilador.png", category: "eletro", active: true },
@@ -33,3 +34,8 @@ export const WEDDING_GIFTS: GiftItem[] = [
   { id: "geladeira", name: "Geladeira", price: 2600, image: "/gifts/geladeira.png", category: "eletro", active: true },
   { id: "viagem-lua-mel", name: "Viagem Lua de Mel", price: 3000, image: "/gifts/viagem-lua-mel.png", category: "lua-de-mel", active: true },
 ];
+
+export const WEDDING_GIFTS: GiftItem[] = BASE_WEDDING_GIFTS.map((gift) => ({
+  ...gift,
+  image: assetPath(gift.image),
+}));

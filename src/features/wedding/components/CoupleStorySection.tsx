@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { SectionTitle } from "@/shared/components/SectionTitle";
 import { BotanicalCorner } from "@/shared/components/BotanicalFrame";
+import { assetPath } from "@/shared/utils/assetPath";
 
 export function CoupleStorySection() {
   return (
@@ -20,7 +21,7 @@ export function CoupleStorySection() {
             <div className="absolute -inset-3 rounded-[2rem] border border-white/80 bg-white/30 shadow-sm" />
             <div className="relative aspect-[4/5] rounded-[1.75rem] overflow-hidden shadow-md">
               <Image
-                src="/couple/casal-real.png"
+                src={assetPath("/couple/casal-real.png")}
                 alt="Casal — imagem ilustrativa"
                 fill
                 className="object-cover"
