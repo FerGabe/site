@@ -67,9 +67,11 @@ export function AdminPage() {
   const firebaseOk = isFirebaseConfigured();
   const auth = getFirebaseAuth();
   const db = getFirestoreDb();
-  const { gifts: mergedGifts } = useMergedGiftCatalog();
-
   const [user, setUser] = useState<User | null>(null);
+  const { gifts: mergedGifts } = useMergedGiftCatalog({
+    enabled: Boolean(user),
+  });
+
   const [authReady, setAuthReady] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -102,7 +104,20 @@ export function AdminPage() {
       setUser(u);
       setAuthReady(true);
     });
-    return () => unsub();
+    const t = window.setTimeout(() => {
+      setAuthReady((ready) => {
+        if (!ready) {
+          console.warn(
+            "[admin] Auth state demorou; exibindo login. Verifique rede / Firebase."
+          );
+        }
+        return true;
+      });
+    }, 12000);
+    return () => {
+      window.clearTimeout(t);
+      unsub();
+    };
   }, [auth]);
 
   useEffect(() => {

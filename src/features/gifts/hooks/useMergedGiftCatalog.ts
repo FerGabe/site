@@ -57,13 +57,26 @@ function mergeGift(base: GiftItem, raw: Record<string, unknown>): GiftItem {
   return next;
 }
 
-export function useMergedGiftCatalog() {
+type MergedCatalogOptions = {
+  /** When false, skips Firestore (e.g. admin login screen before auth). Default true. */
+  enabled?: boolean;
+};
+
+export function useMergedGiftCatalog(options?: MergedCatalogOptions) {
+  const enabled = options?.enabled !== false;
+
   const [overrides, setOverrides] = useState<
     Record<string, Record<string, unknown>>
   >({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!enabled) {
+      setOverrides({});
+      setLoading(false);
+      return;
+    }
+
     const db = getFirestoreDb();
     if (!db) {
       setLoading(false);
@@ -85,7 +98,7 @@ export function useMergedGiftCatalog() {
       }
     );
     return () => unsub();
-  }, []);
+  }, [enabled]);
 
   const gifts = useMemo(() => {
     return WEDDING_GIFTS.map((base) => {
