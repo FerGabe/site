@@ -4,9 +4,9 @@ const isProd = process.env.NODE_ENV === "production";
 const repoName = "site";
 
 const nextConfig: NextConfig = {
-  // Evita corrupção quando `next dev` e `next build` rodam em momentos próximos.
-  // Cada modo usa cache/artefatos separados.
-  distDir: isProd ? ".next-prod" : ".next-dev",
+  // No desenvolvimento, isola cache para evitar conflito com builds locais.
+  // Em produção, usa o padrão do Next para manter export em `out/`.
+  ...(isProd ? {} : { distDir: ".next-dev" }),
   output: "export",
   trailingSlash: true,
   basePath: isProd ? `/${repoName}` : "",
