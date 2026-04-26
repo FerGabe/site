@@ -59,7 +59,7 @@ export function HeroSection() {
   return (
     <section
       id="topo"
-      className="relative flex min-h-[92dvh] flex-col overflow-x-clip overflow-y-visible bg-botanical-fade pt-28 max-md:pb-0 md:min-h-[92vh] md:overflow-hidden md:justify-center md:pt-0 md:pb-0"
+      className="relative flex min-h-[92dvh] flex-col overflow-hidden bg-botanical-fade pt-28 max-md:pb-0 md:min-h-[92vh] md:justify-center md:pt-0 md:pb-0"
     >
       <div className="absolute inset-0 -z-10">
         <div
