@@ -41,6 +41,7 @@ export function CountdownSection() {
   return (
     <section className="relative py-20 md:py-28 bg-gradient-to-b from-cream to-bege-claro/35">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-bege-areia/60 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-bege-areia/70 to-transparent" />
       <div className="mx-auto max-w-4xl px-6 text-center">
         <p className="font-display text-sm tracking-[0.35em] uppercase text-oliva/85 mb-4">
           Contagem regressiva

@@ -7,7 +7,7 @@ export function CoupleStorySection() {
   return (
     <section
       id="historia"
-      className="py-20 md:py-28 bg-gradient-to-b from-bege-claro/35 via-bege-claro/40 to-cream/30 border-b border-bege-areia/25"
+      className="py-20 md:py-28 bg-gradient-to-b from-cream/70 via-bege-claro/35 to-cream/30 border-y border-bege-areia/25"
     >
       <div className="mx-auto max-w-6xl px-6">
         <SectionTitle
@@ -34,7 +34,7 @@ export function CoupleStorySection() {
             </div>
           </div>
 
-          <div className="order-1 md:order-2 space-y-6 text-texto/80 leading-relaxed text-base md:text-lg">
+          <div className="order-1 md:order-2 space-y-6 text-texto/80 leading-relaxed text-base md:text-xl">
             <p>
               <span className="font-display text-2xl text-oliva">Fer</span> e{" "}
               <span className="font-display text-2xl text-oliva">Gabe</span>{" "}
