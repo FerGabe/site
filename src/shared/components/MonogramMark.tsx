@@ -8,6 +8,7 @@ type MonogramMarkProps = {
 /** `<img>` nativo: aparece logo no header (sem esperar o pipeline do `next/image`). */
 export function MonogramMark({ className = "", size = 96 }: MonogramMarkProps) {
   return (
+    // eslint-disable-next-line @next/next/no-img-element -- logo pequeno; prioridade é aparecer cedo.
     <img
       src={assetPath("/brand/monogram-transparent.png")}
       alt="Monograma Fer e Gabe"

@@ -67,7 +67,7 @@ export function HeroSection() {
           className="absolute inset-0 md:will-change-transform"
           style={{ transform: "translate3d(0, 0px, 0) scale(1.06)" }}
         >
-          {/* `img` nativo: menos camadas que `next/image` durante parallax; sem `filter` na camada animada. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- parallax: menos composição que `next/image` + sem filter na camada que move. */}
           <img
             src={assetPath("/couple/casal-real.png")}
             alt=""
