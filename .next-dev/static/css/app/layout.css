@@ -987,6 +987,9 @@ video {
 .max-w-0 {
   max-width: 0px;
 }
+.max-w-\[min\(100\%\2c 20rem\)\] {
+  max-width: min(100%, 20rem);
+}
 .flex-1 {
   flex: 1 1 0%;
 }

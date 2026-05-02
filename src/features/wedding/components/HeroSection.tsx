@@ -108,15 +108,15 @@ export function HeroSection() {
         <div className="mt-auto flex flex-col items-center justify-center gap-4 pt-10 max-md:pb-10 sm:mt-12 sm:flex-row sm:pb-0 animate-fade-up [animation-delay:380ms] opacity-0">
           <a
             href="#presentes"
-            className="inline-flex items-center justify-center rounded-full bg-oliva px-8 py-3.5 text-sm tracking-wide text-white shadow-sm hover:bg-oliva/90 transition-all hover:shadow-md"
+            className="inline-flex max-w-[min(100%,20rem)] items-center justify-center rounded-full bg-oliva px-5 py-3.5 text-center text-xs leading-snug tracking-wide text-white shadow-sm hover:bg-oliva/90 transition-all hover:shadow-md sm:max-w-none sm:px-8 sm:text-sm sm:leading-normal"
           >
-            Lista de presentes
+            Lista de presentes - chá de casa nova
           </a>
           <a
             href="#rsvp"
-            className="inline-flex items-center justify-center rounded-full border border-bege-areia bg-white/60 px-8 py-3.5 text-sm tracking-wide text-texto hover:border-oliva/50 transition-all"
+            className="inline-flex max-w-[min(100%,20rem)] items-center justify-center rounded-full border border-bege-areia bg-white/60 px-5 py-3.5 text-center text-xs leading-snug tracking-wide text-texto hover:border-oliva/50 transition-all sm:max-w-none sm:px-8 sm:text-sm sm:leading-normal"
           >
-            Confirmar presença
+            Confirmar presença - chá de casa nova
           </a>
         </div>
       </div>
