@@ -50,6 +50,8 @@ export type GiftCatalogUpsertInput = {
   image: string;
   category: GiftCategory;
   active: boolean;
+  /** Já comprado pelos noivos — some da lista pública. */
+  purchased: boolean;
   openAmount: boolean;
   pixCode: string;
   cardPaymentLink: string;
@@ -184,6 +186,7 @@ export async function seedGiftCatalogFromCodeDefaults(): Promise<SaveResult> {
           image: g.image,
           category: g.category,
           active: g.active,
+          purchased: Boolean(g.purchased),
           openAmount: Boolean(g.openAmount),
           pixCode: pay?.pixCode ?? "",
           cardPaymentLink: pay?.cardPaymentLink ?? "",

@@ -210,7 +210,7 @@ export function GiftModal({ gift, onClose }: GiftModalProps) {
             <p className="mt-3 text-sm text-texto/65 leading-relaxed">
               {gift.openAmount
                 ? "Sua contribuição será registrada com o valor que indicar abaixo."
-                : "O item permanece visível na lista até a confirmação manual dos noivos."}
+                : "Depois que você copiar a chave Pix ou abrir o link do cartão, o presente some da lista por um tempo para os outros convidados. Itens já comprados pelos noivos ficam em cinza na lista."}
             </p>
           </div>
 

@@ -10,7 +10,6 @@ type GiftCarouselProps = {
   /** Muda quando filtros/ordem mudam — repõe paginação na 1ª grade. */
   scrollResetKey: string;
   lockedGiftIds?: Set<string>;
-  permanentlyLockedGiftIds?: Set<string>;
 };
 
 const PAGE_SIZE = 6;
@@ -20,7 +19,6 @@ export function GiftCarousel({
   onPresentear,
   scrollResetKey,
   lockedGiftIds,
-  permanentlyLockedGiftIds,
 }: GiftCarouselProps) {
   const [page, setPage] = useState(0);
 
@@ -54,11 +52,6 @@ export function GiftCarousel({
             onPresentear={() => onPresentear(gift)}
             layout="carousel"
             locked={Boolean(lockedGiftIds?.has(gift.id))}
-            lockLabel={
-              permanentlyLockedGiftIds?.has(gift.id)
-                ? "Pagamento em confirmação"
-                : "Reservado por 1 dia"
-            }
           />
         ))}
       </div>

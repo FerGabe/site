@@ -13,12 +13,15 @@ import {
   type Timestamp,
 } from "firebase/firestore";
 import { useMergedGiftCatalog } from "@/features/gifts/hooks/useMergedGiftCatalog";
-import type { GiftCategory } from "@/features/gifts/types/gift";
+import type { GiftCategory, GiftItem } from "@/features/gifts/types/gift";
 import { GIFT_PAYMENT_BY_ID } from "@/features/gifts/data/giftPaymentById";
-import { markGiftPaymentReceived } from "@/lib/firestore/saveGiftRequest";
+import {
+  adminCancelGiftReservation,
+  adminConfirmGiftPayment,
+} from "@/lib/firestore/saveGiftRequest";
 import {
   deleteGiftCatalogItem,
-  seedGiftCatalogFromCodeDefaults,
+  type GiftCatalogUpsertInput,
   upsertGiftCatalogItem,
 } from "@/lib/firestore/giftCatalog";
 import { getFirebaseAuth, getFirestoreDb, isFirebaseConfigured } from "@/lib/firebase";
@@ -66,17 +69,62 @@ type CatalogGiftRow = {
   image: string;
   category: GiftCategory;
   active: boolean;
+  purchased: boolean;
   openAmount: boolean;
   pixCode: string;
   cardPaymentLink: string;
   updatedMs: number;
 };
 
+function buildCatalogUpsertFromGift(
+  item: GiftItem,
+  overrides: Partial<Pick<GiftCatalogUpsertInput, "active" | "purchased">>
+): GiftCatalogUpsertInput {
+  const pay = GIFT_PAYMENT_BY_ID[item.id];
+  return {
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    image: normalizePublicAssetPath(item.image),
+    category: item.category,
+    active: overrides.active ?? item.active,
+    purchased: overrides.purchased ?? Boolean(item.purchased),
+    openAmount: Boolean(item.openAmount),
+    pixCode: item.pixCode?.trim() || pay?.pixCode || "",
+    cardPaymentLink: item.cardPaymentLink?.trim() || pay?.cardPaymentLink || "",
+  };
+}
+
 function tsToMs(v: unknown): number {
   if (v && typeof v === "object" && "toMillis" in v) {
     return (v as Timestamp).toMillis();
   }
   return 0;
+}
+
+/** Texto curto para coluna Pessoas: omite crianças se 0, omite adultos se 0. */
+function formatRsvpPeopleBrief(adults: number, children: number): string {
+  const parts: string[] = [];
+  if (adults > 0) parts.push(`${adults} Adu`);
+  if (children > 0) parts.push(`${children} Cri`);
+  return parts.length > 0 ? parts.join(" ") : "—";
+}
+
+function giftRequestStatusLabel(status: string): string {
+  const s = status.toLowerCase();
+  if (s === "confirmed") return "Pago";
+  if (s === "awaiting_payment" || s === "pending_manual_review")
+    return "Reservado";
+  if (s === "canceled" || s === "cancelled") return "Cancelado";
+  if (s === "expired") return "Expirado";
+  return status;
+}
+
+function formatPaymentMethodLabel(raw: string): string {
+  const m = raw.toLowerCase().replace(/\s+/g, "_");
+  if (m === "credit_card") return "Cartão";
+  if (m === "pix") return "Pix";
+  return raw || "—";
 }
 
 function isCategory(value: unknown): value is GiftCategory {
@@ -112,25 +160,29 @@ export function AdminPage() {
   const [tab, setTab] = useState<Tab>("guests");
 
   const [rsvps, setRsvps] = useState<RsvpRow[]>([]);
+  /** false até o primeiro onSnapshot de rsvps (sucesso ou erro). */
+  const [rsvpsLoaded, setRsvpsLoaded] = useState(false);
   const [requests, setRequests] = useState<GiftRequestRow[]>([]);
   const [catalogRows, setCatalogRows] = useState<CatalogGiftRow[]>([]);
-  const [actionId, setActionId] = useState<string | null>(null);
+  const [requestAction, setRequestAction] = useState<{
+    id: string;
+    kind: "confirm" | "cancel";
+  } | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
 
   const [selectedGiftId, setSelectedGiftId] = useState<string>("");
   const [catalogFormMode, setCatalogFormMode] = useState<CatalogFormMode>("hidden");
   const [giftDeletingId, setGiftDeletingId] = useState<string | null>(null);
+  const [giftPurchasedSavingId, setGiftPurchasedSavingId] = useState<string | null>(null);
   const [gId, setGId] = useState("");
   const [gName, setGName] = useState("");
   const [gPrice, setGPrice] = useState("");
   const [gImage, setGImage] = useState("");
   const [gCategory, setGCategory] = useState<GiftCategory>("casa");
-  const [gActive, setGActive] = useState(true);
   const [gOpenAmount, setGOpenAmount] = useState(false);
   const [gPix, setGPix] = useState("");
   const [gCard, setGCard] = useState("");
   const [catalogSaving, setCatalogSaving] = useState(false);
-  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
     if (!auth) {
@@ -160,8 +212,10 @@ export function AdminPage() {
   useEffect(() => {
     if (!db || !user) {
       setRsvps([]);
+      setRsvpsLoaded(false);
       return;
     }
+    setRsvpsLoaded(false);
     const unsub = onSnapshot(
       collection(db, "rsvps"),
       (snap) => {
@@ -182,8 +236,12 @@ export function AdminPage() {
         });
         rows.sort((a, b) => b.createdMs - a.createdMs);
         setRsvps(rows);
+        setRsvpsLoaded(true);
       },
-      () => setRsvps([])
+      () => {
+        setRsvps([]);
+        setRsvpsLoaded(true);
+      }
     );
     return () => unsub();
   }, [db, user]);
@@ -240,6 +298,7 @@ export function AdminPage() {
             image: normalizePublicAssetPath(String(data.image ?? "")),
             category: isCategory(data.category) ? data.category : "casa",
             active: typeof data.active === "boolean" ? data.active : true,
+            purchased: typeof data.purchased === "boolean" ? data.purchased : false,
             openAmount: Boolean(data.openAmount),
             pixCode: String(data.pixCode ?? ""),
             cardPaymentLink: String(data.cardPaymentLink ?? ""),
@@ -287,7 +346,6 @@ export function AdminPage() {
     );
     setGImage(normalizePublicAssetPath(g.image));
     setGCategory(g.category);
-    setGActive(g.active);
     setGOpenAmount(Boolean(g.openAmount || g.price === null));
     setGPix(g.pixCode ?? pay?.pixCode ?? "");
     setGCard(g.cardPaymentLink ?? pay?.cardPaymentLink ?? "");
@@ -315,13 +373,29 @@ export function AdminPage() {
     await signOut(auth);
   };
 
-  const confirmReceived = async (requestId: string) => {
-    setActionId(requestId);
+  const canAdminActOnGiftRequest = (status: string) =>
+    status === "awaiting_payment" || status === "pending_manual_review";
+
+  const runGiftRequestAction = async (
+    requestId: string,
+    kind: "confirm" | "cancel"
+  ) => {
+    if (kind === "cancel") {
+      const ok = window.confirm(
+        "Cancelar esta reserva? O presente volta a ficar disponível na lista pública."
+      );
+      if (!ok) return;
+    }
+    setRequestAction({ id: requestId, kind });
     setBanner(null);
-    const res = await markGiftPaymentReceived(requestId);
-    setActionId(null);
+    const res =
+      kind === "confirm"
+        ? await adminConfirmGiftPayment(requestId)
+        : await adminCancelGiftReservation(requestId);
+    setRequestAction(null);
     if (!res.ok) setBanner(res.error);
-    else setBanner("Presente marcado como recebido.");
+    else if (kind === "confirm") setBanner("Pagamento confirmado.");
+    else setBanner("Reserva cancelada; o presente voltou a ficar disponível.");
   };
 
   const startCreateGift = () => {
@@ -333,7 +407,6 @@ export function AdminPage() {
     setGPrice("");
     setGImage("/gifts/");
     setGCategory("casa");
-    setGActive(true);
     setGOpenAmount(false);
     setGPix("");
     setGCard("");
@@ -353,7 +426,6 @@ export function AdminPage() {
     );
     setGImage(normalizePublicAssetPath(g.image));
     setGCategory(g.category);
-    setGActive(g.active);
     setGOpenAmount(Boolean(g.openAmount || g.price === null));
     setGPix(g.pixCode ?? pay?.pixCode ?? "");
     setGCard(g.cardPaymentLink ?? pay?.cardPaymentLink ?? "");
@@ -366,10 +438,6 @@ export function AdminPage() {
 
   const saveCatalog = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (seeding) {
-      setBanner("Aguarde a publicação no Firebase terminar para salvar alterações.");
-      return;
-    }
     const isCreatingGift = catalogFormMode === "create";
     if (!isCreatingGift && !selectedGiftId) {
       setBanner("Selecione um presente para editar.");
@@ -416,8 +484,9 @@ export function AdminPage() {
         name: gName,
         price,
         image: imagePath.startsWith("/") ? imagePath : `/${imagePath}`,
-        category: gCategory,
-        active: gActive,
+        category: isCreatingGift ? gCategory : (currentGift?.category ?? gCategory),
+        active: isCreatingGift ? true : Boolean(currentGift?.active),
+        purchased: isCreatingGift ? false : Boolean(currentGift?.purchased),
         openAmount: gOpenAmount,
         pixCode: gPix.trim() || defaultPay?.pixCode || "",
         cardPaymentLink: gCard.trim() || defaultPay?.cardPaymentLink || "",
@@ -438,19 +507,29 @@ export function AdminPage() {
     }
   };
 
-  const seedCatalog = async () => {
-    setSeeding(true);
+  const setCatalogGiftPurchased = async (giftId: string, purchased: boolean) => {
+    const item = giftOptions.find((g) => g.id === giftId);
+    if (!item) return;
+    if (Boolean(item.purchased) === purchased) return;
     setBanner(null);
+    setGiftPurchasedSavingId(giftId);
     try {
-      const res = await seedGiftCatalogFromCodeDefaults();
+      const res = await upsertGiftCatalogItem(
+        buildCatalogUpsertFromGift(item, { purchased })
+      );
       if (!res.ok) setBanner(res.error);
-      else setBanner("Lista padrão importada para o Firestore.");
+      else
+        setBanner(
+          purchased
+            ? "Presente marcado como comprado."
+            : "Marcação de comprado removida."
+        );
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : "Erro ao publicar no Firebase.";
+        err instanceof Error ? err.message : "Erro ao atualizar comprado.";
       setBanner(msg);
     } finally {
-      setSeeding(false);
+      setGiftPurchasedSavingId(null);
     }
   };
 
@@ -463,22 +542,18 @@ export function AdminPage() {
     setBanner(null);
     setGiftDeletingId(giftId);
     try {
-      const res = await (firestoreIds.has(giftId)
-        ? deleteGiftCatalogItem(giftId)
-        : upsertGiftCatalogItem({
-            id: giftId,
-            name: item?.name ?? giftId,
-            price: item?.price ?? null,
-            image:
-              item && item.image
-                ? normalizePublicAssetPath(item.image)
-                : "/gifts/placeholder.webp",
-            category: item?.category ?? "casa",
-            active: false,
-            openAmount: Boolean(item?.openAmount),
-            pixCode: item?.pixCode ?? "",
-            cardPaymentLink: item?.cardPaymentLink ?? "",
-          }));
+      let res;
+      if (firestoreIds.has(giftId)) {
+        res = await deleteGiftCatalogItem(giftId);
+      } else {
+        if (!item) {
+          setBanner("Presente não encontrado.");
+          return;
+        }
+        res = await upsertGiftCatalogItem(
+          buildCatalogUpsertFromGift(item, { active: false, purchased: false })
+        );
+      }
       if (!res.ok) {
         setBanner(res.error);
         return;
@@ -597,19 +672,19 @@ export function AdminPage() {
         </p>
       ) : null}
 
-      <nav className="flex flex-wrap gap-2 mb-8">
+      <nav className="-mx-1 mb-8 flex flex-nowrap gap-1.5 overflow-x-auto px-1 pb-1 [-webkit-overflow-scrolling:touch] sm:mx-0 sm:gap-2 sm:px-0">
         {(
           [
-            ["guests", "Convidados (RSVP)"],
-            ["requests", "Pedidos de presente"],
-            ["catalog", "Catálogo de presentes"],
+            ["guests", "convidados"],
+            ["requests", "presentes comprados"],
+            ["catalog", "lista"],
           ] as const
         ).map(([id, label]) => (
           <button
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`rounded-full px-4 py-2 text-sm tracking-wide transition-colors ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-xs tracking-wide transition-colors sm:px-4 sm:text-sm ${
               tab === id
                 ? "bg-oliva text-white shadow-sm"
                 : "border border-bege-areia/80 bg-white/60 text-texto/80 hover:border-oliva/35"
@@ -625,19 +700,71 @@ export function AdminPage() {
           <h2 className="font-display text-xl text-texto">
             Confirmações de presença
           </h2>
-          <div className="overflow-x-auto rounded-2xl border border-bege-claro bg-white/70 shadow-sm">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-bege-claro/80 bg-cream/80 text-xs uppercase tracking-wide text-texto/55">
+          <div className="overflow-hidden rounded-2xl border border-bege-claro bg-white/70 shadow-sm">
+            <table className="w-full table-fixed border-collapse text-left text-[11px] leading-snug sm:text-sm sm:leading-normal">
+              <thead className="border-b border-bege-claro/80 bg-cream/80 text-[10px] uppercase tracking-wide text-texto/55 sm:text-xs">
                 <tr>
-                  <th className="px-4 py-3">Nome</th>
-                  <th className="px-4 py-3">Presença</th>
-                  <th className="px-4 py-3">Pessoas</th>
-                  <th className="px-4 py-3">Acompanhantes</th>
-                  <th className="px-4 py-3">Mensagem</th>
+                  <th
+                    scope="col"
+                    className="w-[26%] min-w-0 px-2 py-2.5 sm:w-[22%] sm:px-4 sm:py-3"
+                  >
+                    Nome
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[11%] min-w-0 px-1 py-2.5 text-center sm:w-auto sm:px-4 sm:text-left"
+                    title="Presença"
+                  >
+                    <span className="sm:hidden">Pres.</span>
+                    <span className="hidden sm:inline">Presença</span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[17%] min-w-0 px-1 py-2.5 sm:w-auto sm:px-4"
+                    title="Pessoas"
+                  >
+                    <span className="sm:hidden">Pess.</span>
+                    <span className="hidden sm:inline">Pessoas</span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[26%] min-w-0 px-1 py-2.5 sm:px-4"
+                    title="Acompanhantes"
+                  >
+                    <span className="sm:hidden">Acomp.</span>
+                    <span className="hidden sm:inline">Acompanhantes</span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="min-w-0 px-1 py-2.5 sm:px-4"
+                    title="Mensagem"
+                  >
+                    <span className="sm:hidden">Msg</span>
+                    <span className="hidden sm:inline">Mensagem</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {rsvps.length === 0 ? (
+                {!rsvpsLoaded ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-4 py-12 text-center text-texto/65"
+                    >
+                      <span
+                        className="inline-flex items-center justify-center gap-3"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        <span
+                          className="inline-block size-5 shrink-0 animate-spin rounded-full border-2 border-bege-areia border-t-oliva"
+                          aria-hidden
+                        />
+                        <span>Carregando convidados…</span>
+                      </span>
+                    </td>
+                  </tr>
+                ) : rsvps.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
@@ -647,28 +774,61 @@ export function AdminPage() {
                     </td>
                   </tr>
                 ) : (
-                  rsvps.map((r) => (
-                    <tr
-                      key={r.id}
-                      className="border-b border-bege-claro/50 align-top"
-                    >
-                      <td className="px-4 py-3 font-medium">{r.fullName}</td>
-                      <td className="px-4 py-3">
-                        {r.attending ? "Sim" : "Não"}
-                      </td>
-                      <td className="px-4 py-3">
-                        {r.adults} adulto(s), {r.children} criança(s)
-                      </td>
-                      <td className="px-4 py-3 text-texto/80">
-                        {r.companionNames.length
-                          ? r.companionNames.join(", ")
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-texto/75 max-w-xs whitespace-pre-wrap">
-                        {r.message || "—"}
-                      </td>
-                    </tr>
-                  ))
+                  rsvps.map((r) => {
+                    const companionsLabel = r.companionNames.length
+                      ? r.companionNames.join(", ")
+                      : "—";
+                    return (
+                      <tr
+                        key={r.id}
+                        className="border-b border-bege-claro/50 align-top"
+                      >
+                        <td className="min-w-0 px-2 py-2.5 font-medium break-words sm:px-4 sm:py-3">
+                          {r.fullName}
+                        </td>
+                        <td className="min-w-0 px-1 py-2.5 text-center sm:px-4 sm:text-left">
+                          <span
+                            className="inline-block text-[1.15rem] leading-none"
+                            role="img"
+                            aria-label={
+                              r.attending ? "Sim, comparece" : "Não comparece"
+                            }
+                          >
+                            {r.attending ? "✅" : "❌"}
+                          </span>
+                        </td>
+                        <td className="min-w-0 px-1 py-2.5 tabular-nums sm:px-4 sm:py-3">
+                          <span className="sm:hidden">
+                            {formatRsvpPeopleBrief(r.adults, r.children)}
+                          </span>
+                          <span className="hidden sm:inline">
+                            {r.adults > 0
+                              ? `${r.adults} adulto(s)${r.children > 0 ? `, ${r.children} criança(s)` : ""}`
+                              : r.children > 0
+                                ? `${r.children} criança(s)`
+                                : "—"}
+                          </span>
+                        </td>
+                        <td
+                          className="min-w-0 max-w-0 px-1 py-2.5 text-texto/80 sm:max-w-none sm:px-4 sm:py-3"
+                          title={
+                            r.companionNames.length
+                              ? r.companionNames.join(", ")
+                              : undefined
+                          }
+                        >
+                          <span className="block truncate sm:whitespace-normal sm:break-words">
+                            {companionsLabel}
+                          </span>
+                        </td>
+                        <td className="min-w-0 px-1 py-2.5 text-texto/75 sm:px-4 sm:py-3">
+                          <p className="line-clamp-3 break-words sm:line-clamp-none sm:whitespace-pre-wrap">
+                            {r.message || "—"}
+                          </p>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -681,78 +841,128 @@ export function AdminPage() {
           <h2 className="font-display text-xl text-texto">
             Pedidos e reservas de presente
           </h2>
-          <p className="text-sm text-texto/65">
-            Use &ldquo;Marcar recebido&rdquo; quando o pagamento já tiver sido
-            confirmado por você (após o convidado declarar pagamento).
-          </p>
-          <div className="overflow-x-auto rounded-2xl border border-bege-claro bg-white/70 shadow-sm">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-bege-claro/80 bg-cream/80 text-xs uppercase tracking-wide text-texto/55">
-                <tr>
-                  <th className="px-4 py-3">Presente</th>
-                  <th className="px-4 py-3">Valor</th>
-                  <th className="px-4 py-3">Convidado</th>
-                  <th className="px-4 py-3">Pagamento</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Ação</th>
-                </tr>
-              </thead>
+          <div className="overflow-hidden rounded-2xl border border-bege-claro bg-white/70 shadow-sm">
+            <table className="w-full border-collapse text-left text-sm">
               <tbody>
                 {requests.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={6}
-                      className="px-4 py-8 text-center text-texto/60"
-                    >
+                    <td className="px-4 py-8 text-center text-texto/60">
                       Nenhum pedido encontrado.
                     </td>
                   </tr>
                 ) : (
-                  requests.map((r) => (
-                    <tr
-                      key={r.id}
-                      className="border-b border-bege-claro/50 align-top"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="font-medium">{r.giftName}</div>
-                        <div className="text-xs text-texto/50">{r.giftId}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {Number.isFinite(r.giftValue)
-                          ? r.giftValue.toLocaleString("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                            })
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div>{r.guestName}</div>
-                        {r.message ? (
-                          <div className="mt-1 text-xs text-texto/60 whitespace-pre-wrap max-w-[14rem]">
-                            {r.message}
+                  requests.map((r) => {
+                    const valueLabel = Number.isFinite(r.giftValue)
+                      ? r.giftValue.toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })
+                      : "—";
+                    const paymentLabel = formatPaymentMethodLabel(
+                      r.paymentMethod
+                    );
+                    const statusLabel = giftRequestStatusLabel(String(r.status));
+                    const showActions = canAdminActOnGiftRequest(
+                      String(r.status)
+                    );
+                    const busy = requestAction?.id === r.id;
+                    const actions = showActions ? (
+                      <>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() =>
+                            void runGiftRequestAction(r.id, "confirm")
+                          }
+                          className="shrink-0 whitespace-nowrap rounded-full border border-oliva/40 px-2 py-1.5 text-[10px] text-oliva hover:bg-oliva hover:text-white transition-colors disabled:opacity-50 sm:px-3 sm:text-xs"
+                        >
+                          {busy && requestAction?.kind === "confirm"
+                            ? "Salvando…"
+                            : "Confirmar pagamento"}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() =>
+                            void runGiftRequestAction(r.id, "cancel")
+                          }
+                          className="shrink-0 whitespace-nowrap rounded-full border border-texto/25 px-2 py-1.5 text-[10px] text-texto/80 hover:bg-texto/10 transition-colors disabled:opacity-50 sm:px-3 sm:text-xs"
+                        >
+                          {busy && requestAction?.kind === "cancel"
+                            ? "Salvando…"
+                            : "Cancelar reserva"}
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-texto/45 text-xs">—</span>
+                    );
+                    return (
+                      <tr
+                        key={r.id}
+                        className="border-b border-bege-claro/50 align-top last:border-b-0"
+                      >
+                        <td className="px-3 py-3 sm:px-4 sm:py-3">
+                          <div className="sm:hidden">
+                            <div className="flex items-baseline justify-between gap-2">
+                              <span className="min-w-0 flex-1 font-medium leading-snug break-words">
+                                {r.giftName}
+                              </span>
+                              <span className="shrink-0 tabular-nums text-[11px] text-texto/80">
+                                {valueLabel}
+                              </span>
+                            </div>
+                            <div className="mt-2">
+                              <p className="font-medium leading-snug">
+                                {r.guestName}
+                              </p>
+                              {r.message ? (
+                                <p className="mt-1 line-clamp-2 break-words text-[11px] text-texto/60">
+                                  {r.message}
+                                </p>
+                              ) : null}
+                            </div>
+                            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-texto/70">
+                              <span>{paymentLabel}</span>
+                              <span className="text-texto/35" aria-hidden>
+                                ·
+                              </span>
+                              <span className="font-semibold text-texto">
+                                {statusLabel}
+                              </span>
+                            </div>
+                            <div className="mt-3 flex flex-nowrap items-center gap-2">
+                              {actions}
+                            </div>
                           </div>
-                        ) : null}
-                      </td>
-                      <td className="px-4 py-3 capitalize">{r.paymentMethod}</td>
-                      <td className="px-4 py-3 text-xs uppercase tracking-wide text-texto/70">
-                        {r.status}
-                      </td>
-                      <td className="px-4 py-3">
-                        {r.status === "pending_manual_review" ? (
-                          <button
-                            type="button"
-                            disabled={actionId === r.id}
-                            onClick={() => void confirmReceived(r.id)}
-                            className="rounded-full border border-oliva/40 px-3 py-1.5 text-xs text-oliva hover:bg-oliva hover:text-white transition-colors disabled:opacity-50"
-                          >
-                            {actionId === r.id ? "Salvando…" : "Marcar recebido"}
-                          </button>
-                        ) : (
-                          <span className="text-texto/45">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+                          <div className="hidden gap-3 text-sm sm:grid sm:grid-cols-[minmax(0,1.1fr)_6.5rem_minmax(0,1fr)_4.5rem_5rem_auto] sm:items-start">
+                            <div className="min-w-0 font-medium leading-snug break-words">
+                              {r.giftName}
+                            </div>
+                            <div className="shrink-0 tabular-nums text-texto/85">
+                              {valueLabel}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-medium">{r.guestName}</div>
+                              {r.message ? (
+                                <p className="mt-1 line-clamp-2 whitespace-pre-wrap break-words text-xs text-texto/60">
+                                  {r.message}
+                                </p>
+                              ) : null}
+                            </div>
+                            <div className="shrink-0 pt-0.5 text-xs">
+                              {paymentLabel}
+                            </div>
+                            <div className="shrink-0 pt-0.5 text-xs font-semibold text-texto/85">
+                              {statusLabel}
+                            </div>
+                            <div className="flex min-w-0 flex-col gap-2 justify-self-end pt-0.5">
+                              {actions}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -764,36 +974,12 @@ export function AdminPage() {
         <section className="space-y-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="font-display text-xl text-texto">
-              Catálogo de presentes
+              Lista de presentes
             </h2>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={startCreateGift}
-                className="rounded-full bg-oliva px-4 py-2 text-sm text-white hover:bg-oliva/90"
-              >
-                + Criar novo presente
-              </button>
-              <button
-                type="button"
-                disabled={seeding}
-                onClick={() => void seedCatalog()}
-                className="rounded-full border border-bege-areia bg-white/70 px-4 py-2 text-sm text-texto hover:border-oliva/40 disabled:opacity-50"
-              >
-                {seeding ? "Publicando…" : "Publicar 31 no Firebase"}
-              </button>
-            </div>
-          </div>
-          <p className="text-sm text-texto/65">
-            Visualize toda a lista de presentes (base + Firestore), edite, oculte,
-            exclua itens do Firestore e crie novos. Para imagem, use caminho público como{" "}
-            <code className="text-xs">/gifts/arquivo.webp</code>.
-          </p>
-          <div className="sm:hidden">
             <button
               type="button"
               onClick={startCreateGift}
-              className="w-full rounded-full bg-oliva px-4 py-2.5 text-sm text-white hover:bg-oliva/90"
+              className="w-full shrink-0 rounded-full bg-oliva px-4 py-2.5 text-sm text-white hover:bg-oliva/90 sm:w-auto sm:py-2"
             >
               + Criar novo presente
             </button>
@@ -801,13 +987,10 @@ export function AdminPage() {
 
           <div className="overflow-x-auto rounded-2xl border border-bege-claro bg-white/70 shadow-sm">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-bege-claro/80 bg-cream/80 text-xs uppercase tracking-wide text-texto/55">
+              <thead className="hidden border-b border-bege-claro/80 bg-cream/80 text-xs uppercase tracking-wide text-texto/55 sm:table-header-group">
                 <tr>
                   <th className="px-4 py-3">Nome</th>
-                  <th className="px-4 py-3">ID</th>
-                  <th className="px-4 py-3">Categoria</th>
                   <th className="px-4 py-3">Valor</th>
-                  <th className="px-4 py-3">Ativo</th>
                   <th className="px-4 py-3">Ações</th>
                 </tr>
               </thead>
@@ -815,55 +998,99 @@ export function AdminPage() {
                 {giftOptions.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={3}
                       className="px-4 py-8 text-center text-texto/60"
                     >
                       Nenhum presente encontrado.
                     </td>
                   </tr>
                 ) : (
-                  giftOptions.map((g) => (
-                    <tr
-                      key={g.id}
-                      className="border-b border-bege-claro/50 align-top"
-                    >
-                      <td className="px-4 py-3 font-medium">{g.name}</td>
-                      <td className="px-4 py-3 text-xs text-texto/60">{g.id}</td>
-                      <td className="px-4 py-3">{g.category}</td>
-                      <td className="px-4 py-3">
-                        {g.openAmount || g.price === null
-                          ? "Valor livre"
-                          : g.price.toLocaleString("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                            })}
-                      </td>
-                      <td className="px-4 py-3">{g.active ? "Sim" : "Não"}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => startEditGift(g.id)}
-                            className="rounded-full border border-oliva/40 px-3 py-1.5 text-xs text-oliva hover:bg-oliva hover:text-white transition-colors"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            disabled={giftDeletingId === g.id}
-                            onClick={() => void deleteCatalogGift(g.id)}
-                            className="rounded-full border border-red-300 px-3 py-1.5 text-xs text-red-700 hover:bg-red-600 hover:text-white transition-colors disabled:opacity-60"
-                          >
-                            {giftDeletingId === g.id
-                              ? "Salvando…"
-                              : firestoreIds.has(g.id)
-                                ? "Excluir"
-                                : "Ocultar"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  giftOptions.map((g) => {
+                    const priceLabel =
+                      g.openAmount || g.price === null
+                        ? "Valor livre"
+                        : g.price.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          });
+                    const actionsDisabled =
+                      giftPurchasedSavingId === g.id ||
+                      giftDeletingId === g.id;
+                    const payBtnClass = g.purchased
+                      ? "border-oliva bg-oliva text-white"
+                      : "border-bege-areia bg-white text-texto/75 hover:border-oliva/35";
+                    return (
+                      <tr
+                        key={g.id}
+                        className="border-b border-bege-claro/50 align-top"
+                      >
+                        <td colSpan={3} className="px-4 py-3">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-5">
+                            <div className="min-w-0 sm:hidden">
+                              <div className="font-medium leading-snug">
+                                {g.name}
+                              </div>
+                              <div className="mt-0.5 text-sm text-texto/70 tabular-nums">
+                                {priceLabel}
+                              </div>
+                            </div>
+                            <div className="hidden min-w-0 font-medium leading-snug sm:block sm:flex-1 sm:truncate">
+                              {g.name}
+                            </div>
+                            <div className="hidden shrink-0 text-sm text-texto/70 tabular-nums sm:block sm:w-28 sm:text-right">
+                              {priceLabel}
+                            </div>
+                            <div className="-mx-0.5 flex flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 sm:mx-0 sm:ml-auto sm:shrink-0 sm:gap-2 sm:overflow-visible sm:pb-0">
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={g.purchased}
+                                aria-label={
+                                  g.purchased
+                                    ? "Presente comprado no catálogo; clique para desmarcar"
+                                    : "Marcar presente como pago no catálogo"
+                                }
+                                disabled={actionsDisabled}
+                                onClick={() =>
+                                  void setCatalogGiftPurchased(
+                                    g.id,
+                                    !g.purchased
+                                  )
+                                }
+                                className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-1.5 text-[10px] font-medium leading-tight transition-colors disabled:cursor-not-allowed disabled:opacity-45 sm:px-3 sm:text-xs ${payBtnClass}`}
+                              >
+                                {giftPurchasedSavingId === g.id
+                                  ? "Salvando…"
+                                  : g.purchased
+                                    ? "Presente comprado"
+                                    : "Marcar como pago"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => startEditGift(g.id)}
+                                disabled={actionsDisabled}
+                                className="shrink-0 whitespace-nowrap rounded-full border border-oliva/40 px-2 py-1.5 text-[10px] text-oliva hover:bg-oliva hover:text-white transition-colors disabled:opacity-50 sm:px-3 sm:text-xs"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                disabled={actionsDisabled}
+                                onClick={() => void deleteCatalogGift(g.id)}
+                                className="shrink-0 whitespace-nowrap rounded-full border border-red-300 px-2 py-1.5 text-[10px] text-red-700 hover:bg-red-600 hover:text-white transition-colors disabled:opacity-60 sm:px-3 sm:text-xs"
+                              >
+                                {giftDeletingId === g.id
+                                  ? "Salvando…"
+                                  : firestoreIds.has(g.id)
+                                    ? "Excluir"
+                                    : "Ocultar"}
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -951,31 +1178,6 @@ export function AdminPage() {
                 </label>
 
                 <label className="block text-sm">
-                  <span className="text-texto/70">Categoria</span>
-                  <select
-                    className="mt-1.5 w-full rounded-xl border border-bege-claro bg-white px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
-                    value={gCategory}
-                    onChange={(e) => setGCategory(e.target.value as GiftCategory)}
-                  >
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="accent-oliva"
-                    checked={gActive}
-                    onChange={(e) => setGActive(e.target.checked)}
-                  />
-                  <span className="text-texto/75">Ativo na lista pública</span>
-                </label>
-
-                <label className="block text-sm">
                   <span className="text-texto/70">Pix copia e cola</span>
                   <textarea
                     rows={3}
@@ -997,7 +1199,7 @@ export function AdminPage() {
 
                 <button
                   type="submit"
-                  disabled={catalogSaving || seeding}
+                  disabled={catalogSaving}
                   className="w-full rounded-full bg-oliva py-3 text-sm font-medium text-white hover:bg-oliva/90 disabled:opacity-50 transition-colors"
                 >
                   {catalogSaving

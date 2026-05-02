@@ -8,6 +8,7 @@ export type GiftCatalogRestPatchInput = {
   image: string;
   category: GiftCategory;
   active: boolean;
+  purchased: boolean;
   openAmount: boolean;
   pixCode: string;
   cardPaymentLink: string;
@@ -19,6 +20,7 @@ const WRITE_FIELD_PATHS = [
   "image",
   "category",
   "active",
+  "purchased",
   "openAmount",
   "pixCode",
   "cardPaymentLink",
@@ -93,6 +95,7 @@ export async function patchGiftCatalogDocumentRest(
     image: encodeFirestoreValue(input.image.trim()),
     category: encodeFirestoreValue(input.category),
     active: encodeFirestoreValue(input.active),
+    purchased: encodeFirestoreValue(input.purchased),
     openAmount: encodeFirestoreValue(input.openAmount),
     pixCode: encodeFirestoreValue(input.pixCode.trim()),
     cardPaymentLink: encodeFirestoreValue(input.cardPaymentLink.trim()),

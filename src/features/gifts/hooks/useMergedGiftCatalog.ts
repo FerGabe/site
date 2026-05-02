@@ -47,6 +47,9 @@ function mergeGift(base: GiftItem, raw: Record<string, unknown>): GiftItem {
   if (typeof raw.active === "boolean") {
     next.active = raw.active;
   }
+  if (typeof raw.purchased === "boolean") {
+    next.purchased = raw.purchased;
+  }
   if (typeof raw.pixCode === "string") {
     next.pixCode = raw.pixCode.trim() || undefined;
   }
@@ -80,6 +83,7 @@ function fromFirestoreOnly(
     image: assetPath(normalizePublicAssetPath(raw.image.trim())),
     category: raw.category,
     active: typeof raw.active === "boolean" ? raw.active : true,
+    purchased: typeof raw.purchased === "boolean" ? raw.purchased : false,
     openAmount,
     pixCode:
       typeof raw.pixCode === "string" ? raw.pixCode.trim() || undefined : undefined,

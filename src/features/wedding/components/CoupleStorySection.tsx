@@ -12,8 +12,25 @@ export function CoupleStorySection() {
       <div className="mx-auto max-w-6xl px-6">
         <SectionTitle
           eyebrow="Nossa história"
-          title="De encontros simples a um sim eterno"
-          subtitle="Do primeiro café aos planos de vida, aprendemos que o amor verdadeiro é calmo e cheio de presença."
+          title="Isaías 41:20"
+          subtitle={
+            <div className="space-y-4 text-balance">
+              <p>
+                Entre conversas leves e risadas espontâneas, descobrimos uma
+                conexão que, desde o início, carregava algo diferente: presença,
+                intenção e verdade.
+              </p>
+              <p>
+                Nossa história começou de forma natural, quase despretensiosa,
+                mas já trazia em si algo maior: Deus escrevendo cada detalhe,
+                mesmo quando a gente ainda não entendia.
+              </p>
+              <p>
+                Agora, seguimos construindo juntos — com propósito, fé e a
+                certeza de que esse é só o começo.
+              </p>
+            </div>
+          }
         />
 
         <div className="grid gap-12 md:gap-16 md:grid-cols-2 items-center">

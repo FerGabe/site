@@ -2,10 +2,13 @@ import {
   addDoc,
   collection,
   doc,
+  getDoc,
   getDocs,
   limit,
   query,
   serverTimestamp,
+  type Firestore,
+  type Timestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
@@ -32,6 +35,53 @@ function reservationExpiresAtIso(): string {
   return new Date(Date.now() + DAY_MS).toISOString();
 }
 
+function reservedUntilMs(raw: unknown): number {
+  if (raw == null) return 0;
+  if (typeof raw === "string") {
+    const t = Date.parse(raw);
+    return Number.isFinite(t) ? t : 0;
+  }
+  if (
+    typeof raw === "object" &&
+    raw !== null &&
+    "toMillis" in raw &&
+    typeof (raw as Timestamp).toMillis === "function"
+  ) {
+    return (raw as Timestamp).toMillis();
+  }
+  return 0;
+}
+
+/** Presente já tem reserva ativa ou pagamento em análise — não deixa outro convidado. */
+async function giftHasBlockingReservation(
+  db: Firestore,
+  giftId: string
+): Promise<boolean> {
+  const snap = await getDocs(
+    query(collection(db, "gift_requests"), where("giftId", "==", giftId))
+  );
+  const now = Date.now();
+  for (const d of snap.docs) {
+    const data = d.data() as Record<string, unknown>;
+    const status = String(data.status ?? "");
+    if (
+      status === "canceled" ||
+      status === "cancelled" ||
+      status === "expired"
+    ) {
+      continue;
+    }
+    if (status === "awaiting_payment") {
+      if (reservedUntilMs(data.reservedUntil) > now) return true;
+      continue;
+    }
+    if (status === "pending_manual_review" || status === "confirmed") {
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Cria reserva temporária de 1 dia ao iniciar pagamento. */
 export async function createGiftReservation(
   input: SaveGiftRequestInput
@@ -46,6 +96,13 @@ export async function createGiftReservation(
   }
 
   try {
+    if (await giftHasBlockingReservation(db, input.giftId)) {
+      return {
+        ok: false,
+        error:
+          "Este presente já foi reservado ou está em confirmação. Escolha outro.",
+      };
+    }
     const ref = await addDoc(collection(db, "gift_requests"), {
       giftId: input.giftId,
       giftName: input.giftName,
@@ -104,6 +161,15 @@ export async function confirmGiftPaymentById(
 export async function markGiftPaymentReceived(
   requestId: string
 ): Promise<SaveResult> {
+  return adminConfirmGiftPayment(requestId);
+}
+
+/**
+ * Admin: confirma pagamento (reserva aguardando ou já declarado pelo convidado).
+ */
+export async function adminConfirmGiftPayment(
+  requestId: string
+): Promise<SaveResult> {
   const db = getFirestoreDb();
   if (!db) {
     return {
@@ -113,14 +179,78 @@ export async function markGiftPaymentReceived(
     };
   }
   try {
-    await updateDoc(doc(db, "gift_requests", requestId), {
+    const ref = doc(db, "gift_requests", requestId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      return { ok: false, error: "Pedido não encontrado." };
+    }
+    const status = String(snap.data()?.status ?? "");
+    if (
+      status !== "awaiting_payment" &&
+      status !== "pending_manual_review"
+    ) {
+      return {
+        ok: false,
+        error:
+          "Só é possível confirmar pagamento em reserva ou em análise manual.",
+      };
+    }
+    const patch: Record<string, unknown> = {
       status: "confirmed",
       locked: true,
+      reservedUntil: null,
+      updatedAt: serverTimestamp(),
+    };
+    if (status === "awaiting_payment") {
+      patch.paymentDeclaredAt = serverTimestamp();
+    }
+    await updateDoc(ref, patch);
+    return { ok: true, id: requestId };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Erro ao confirmar pagamento.";
+    return { ok: false, error: msg };
+  }
+}
+
+/**
+ * Admin: cancela reserva / pedido em análise e libera o presente na lista pública.
+ */
+export async function adminCancelGiftReservation(
+  requestId: string
+): Promise<SaveResult> {
+  const db = getFirestoreDb();
+  if (!db) {
+    return {
+      ok: false,
+      error:
+        "Firebase não configurado. Verifique as variáveis em .env.local.",
+    };
+  }
+  try {
+    const ref = doc(db, "gift_requests", requestId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      return { ok: false, error: "Pedido não encontrado." };
+    }
+    const status = String(snap.data()?.status ?? "");
+    if (
+      status !== "awaiting_payment" &&
+      status !== "pending_manual_review"
+    ) {
+      return {
+        ok: false,
+        error: "Só é possível cancelar reserva ou pagamento em análise.",
+      };
+    }
+    await updateDoc(ref, {
+      status: "canceled",
+      locked: false,
+      reservedUntil: null,
       updatedAt: serverTimestamp(),
     });
     return { ok: true, id: requestId };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Erro ao confirmar no admin.";
+    const msg = e instanceof Error ? e.message : "Erro ao cancelar reserva.";
     return { ok: false, error: msg };
   }
 }

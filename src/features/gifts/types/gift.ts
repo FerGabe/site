@@ -13,6 +13,8 @@ export type GiftItem = {
   image: string;
   category: GiftCategory;
   active: boolean;
+  /** Marcado pelos noivos: já foi comprado — some da lista pública. */
+  purchased?: boolean;
   /** Presente com valor livre (ex.: contribuição). */
   openAmount?: boolean;
   /** Payload Pix copia-e-cola específico do presente. */

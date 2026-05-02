@@ -10,7 +10,7 @@ import { filterAndSortGifts } from "../utils/filterGifts";
 import { SectionTitle } from "@/shared/components/SectionTitle";
 import { BotanicalDivider } from "@/shared/components/BotanicalFrame";
 import { getFirestoreDb } from "@/lib/firebase";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, type Timestamp } from "firebase/firestore";
 
 const BANDS: { id: PriceBand; label: string }[] = [
   { id: "all", label: "Todos" },
@@ -25,18 +25,31 @@ const SORTS: { id: PriceSort; label: string }[] = [
   { id: "desc", label: "Maior → menor" },
 ];
 
+function reservedUntilMs(raw: unknown): number {
+  if (raw == null) return 0;
+  if (typeof raw === "string") {
+    const t = Date.parse(raw);
+    return Number.isFinite(t) ? t : 0;
+  }
+  if (
+    typeof raw === "object" &&
+    raw !== null &&
+    "toMillis" in raw &&
+    typeof (raw as Timestamp).toMillis === "function"
+  ) {
+    return (raw as Timestamp).toMillis();
+  }
+  return 0;
+}
+
 export function GiftListSection() {
   const { gifts: catalogGifts } = useMergedGiftCatalog();
   const [selected, setSelected] = useState<GiftItem | null>(null);
   const [band, setBand] = useState<PriceBand>("all");
   const [sort, setSort] = useState<PriceSort>("default");
   const [lockedGiftIds, setLockedGiftIds] = useState<Set<string>>(new Set());
-  const [permanentLocks, setPermanentLocks] = useState<Set<string>>(new Set());
 
-  const base = useMemo(
-    () => catalogGifts.filter((g) => g.active),
-    [catalogGifts]
-  );
+  const base = useMemo(() => catalogGifts.filter((g) => g.active), [catalogGifts]);
 
   const visible = useMemo(
     () => filterAndSortGifts(base, band, sort),
@@ -48,13 +61,8 @@ export function GiftListSection() {
   useEffect(() => {
     const db = getFirestoreDb();
     if (!db) return;
-    const q = query(
-      collection(db, "gift_requests"),
-      where("status", "in", ["awaiting_payment", "pending_manual_review", "confirmed"])
-    );
-
     const unsub = onSnapshot(
-      q,
+      collection(db, "gift_requests"),
       (snap) => {
         const now = Date.now();
         const temporary = new Set<string>();
@@ -64,14 +72,12 @@ export function GiftListSection() {
           const data = d.data() as {
             giftId?: string;
             status?: string;
-            reservedUntil?: string | null;
+            reservedUntil?: unknown;
           };
           if (!data.giftId || !data.status) return;
 
           if (data.status === "awaiting_payment") {
-            const until = data.reservedUntil
-              ? Date.parse(data.reservedUntil)
-              : 0;
+            const until = reservedUntilMs(data.reservedUntil);
             if (until > now) temporary.add(data.giftId);
             return;
           }
@@ -85,12 +91,10 @@ export function GiftListSection() {
         });
 
         setLockedGiftIds(new Set([...temporary, ...permanent]));
-        setPermanentLocks(permanent);
       },
       () => {
         /* Sem permissão de leitura ou índice: não quebra a página. */
         setLockedGiftIds(new Set());
-        setPermanentLocks(new Set());
       }
     );
 
@@ -105,8 +109,8 @@ export function GiftListSection() {
       <div className="mx-auto max-w-6xl px-6">
         <SectionTitle
           eyebrow="Lista de presentes"
-          title="Gestos que aquecem o lar"
-          subtitle="Cada escolha é um abraço na nossa nova vida a dois. Os presentes permanecem visíveis até a confirmação pelos noivos — assim todos podem sonhar juntos, com calma e elegância."
+          title="Um novo capítulo, mesmo autor!"
+          subtitle="Cada escolha é um abraço na nossa nova vida a dois e os presentes se tornam parte do nosso lar — e da história que estamos começando."
         />
         <BotanicalDivider className="mb-10" />
 
@@ -161,7 +165,6 @@ export function GiftListSection() {
           onPresentear={setSelected}
           scrollResetKey={scrollKey}
           lockedGiftIds={lockedGiftIds}
-          permanentlyLockedGiftIds={permanentLocks}
         />
       </div>
 
