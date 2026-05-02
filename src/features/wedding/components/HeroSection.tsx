@@ -101,8 +101,8 @@ export function HeroSection() {
             6 de junho de 2026
           </p>
           <p className="max-w-xl mx-auto text-base md:text-lg text-texto/70 leading-relaxed animate-fade-up [animation-delay:300ms] opacity-0">
-            Cada detalhe deste convite carrega um pedacinho do nosso amor — e o
-            desejo de ter você ao nosso lado.
+            Cada detalhe deste convite carrega um pedacinho do nosso amor e o
+            desejo de ter você ao nosso lado
           </p>
         </div>
         <div className="mt-auto flex flex-col items-center justify-center gap-4 pt-10 max-md:pb-10 sm:mt-12 sm:flex-row sm:pb-0 animate-fade-up [animation-delay:380ms] opacity-0">

@@ -47,7 +47,7 @@ export function CountdownSection() {
           Contagem regressiva
         </p>
         <h2 className="font-display text-3xl md:text-4xl text-texto mb-4">
-          Até o grande dia
+          Até o chá de casa nova
         </h2>
         <BotanicalDivider className="mb-12" />
         {isPast ? (

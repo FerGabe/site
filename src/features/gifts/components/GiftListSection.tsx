@@ -108,7 +108,7 @@ export function GiftListSection() {
     >
       <div className="mx-auto max-w-6xl px-6">
         <SectionTitle
-          eyebrow="Lista de presentes"
+          eyebrow="Lista de presentes chá de casa nova"
           title="Um novo capítulo, mesmo autor!"
           subtitle="Cada escolha é um abraço na nossa nova vida a dois e os presentes se tornam parte do nosso lar — e da história que estamos começando."
         />
