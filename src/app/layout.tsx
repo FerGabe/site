@@ -43,6 +43,7 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       className={`${display.variable} ${sans.variable} ${heroName.variable}`}
+      suppressHydrationWarning
     >
       <head>
         <link
@@ -52,7 +53,8 @@ export default function RootLayout({
           type="image/png"
         />
       </head>
-      <body className="min-h-screen">
+      {/* Extensões (ex.: Bitdefender) injetam atributos no DOM e disparam falso "hydration mismatch" no dev. */}
+      <body className="min-h-screen" suppressHydrationWarning>
         <UnhandledRejectionGuard />
         {children}
       </body>

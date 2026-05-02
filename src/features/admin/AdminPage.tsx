@@ -13,9 +13,11 @@ import {
   type Timestamp,
 } from "firebase/firestore";
 import { useMergedGiftCatalog } from "@/features/gifts/hooks/useMergedGiftCatalog";
-import type { GiftCategory, GiftItem } from "@/features/gifts/types/gift";
+import type { GiftCategory } from "@/features/gifts/types/gift";
+import { GIFT_PAYMENT_BY_ID } from "@/features/gifts/data/giftPaymentById";
 import { markGiftPaymentReceived } from "@/lib/firestore/saveGiftRequest";
 import {
+  deleteGiftCatalogItem,
   seedGiftCatalogFromCodeDefaults,
   upsertGiftCatalogItem,
 } from "@/lib/firestore/giftCatalog";
@@ -24,6 +26,7 @@ import type { GiftRequestStatus } from "@/shared/types/firestore";
 import { normalizePublicAssetPath } from "@/shared/utils/assetPath";
 
 type Tab = "guests" | "requests" | "catalog";
+type CatalogFormMode = "hidden" | "create" | "edit";
 
 const CATEGORIES: GiftCategory[] = [
   "lua-de-mel",
@@ -56,11 +59,41 @@ type GiftRequestRow = {
   createdMs: number;
 };
 
+type CatalogGiftRow = {
+  id: string;
+  name: string;
+  price: number | null;
+  image: string;
+  category: GiftCategory;
+  active: boolean;
+  openAmount: boolean;
+  pixCode: string;
+  cardPaymentLink: string;
+  updatedMs: number;
+};
+
 function tsToMs(v: unknown): number {
   if (v && typeof v === "object" && "toMillis" in v) {
     return (v as Timestamp).toMillis();
   }
   return 0;
+}
+
+function isCategory(value: unknown): value is GiftCategory {
+  return (
+    typeof value === "string" &&
+    CATEGORIES.includes(value as GiftCategory)
+  );
+}
+
+function toGiftId(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 export function AdminPage() {
@@ -80,10 +113,14 @@ export function AdminPage() {
 
   const [rsvps, setRsvps] = useState<RsvpRow[]>([]);
   const [requests, setRequests] = useState<GiftRequestRow[]>([]);
+  const [catalogRows, setCatalogRows] = useState<CatalogGiftRow[]>([]);
   const [actionId, setActionId] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
 
   const [selectedGiftId, setSelectedGiftId] = useState<string>("");
+  const [catalogFormMode, setCatalogFormMode] = useState<CatalogFormMode>("hidden");
+  const [giftDeletingId, setGiftDeletingId] = useState<string | null>(null);
+  const [gId, setGId] = useState("");
   const [gName, setGName] = useState("");
   const [gPrice, setGPrice] = useState("");
   const [gImage, setGImage] = useState("");
@@ -181,17 +218,69 @@ export function AdminPage() {
     return () => unsub();
   }, [db, user]);
 
-  const giftOptions = useMemo(() => mergedGifts, [mergedGifts]);
+  useEffect(() => {
+    if (!db || !user) {
+      setCatalogRows([]);
+      return;
+    }
+    const unsub = onSnapshot(
+      collection(db, "gifts"),
+      (snap) => {
+        const rows: CatalogGiftRow[] = snap.docs.map((d) => {
+          const data = d.data() as Record<string, unknown>;
+          return {
+            id: d.id,
+            name: String(data.name ?? d.id),
+            price:
+              data.price === null
+                ? null
+                : typeof data.price === "number" && Number.isFinite(data.price)
+                  ? data.price
+                  : null,
+            image: normalizePublicAssetPath(String(data.image ?? "")),
+            category: isCategory(data.category) ? data.category : "casa",
+            active: typeof data.active === "boolean" ? data.active : true,
+            openAmount: Boolean(data.openAmount),
+            pixCode: String(data.pixCode ?? ""),
+            cardPaymentLink: String(data.cardPaymentLink ?? ""),
+            updatedMs: tsToMs(data.updatedAt),
+          };
+        });
+        rows.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+        setCatalogRows(rows);
+      },
+      () => setCatalogRows([])
+    );
+    return () => unsub();
+  }, [db, user]);
+
+  const giftOptions = useMemo(
+    () =>
+      [...mergedGifts].sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
+    [mergedGifts]
+  );
+  const firestoreIds = useMemo(
+    () => new Set(catalogRows.map((g) => g.id)),
+    [catalogRows]
+  );
 
   useEffect(() => {
-    if (!selectedGiftId && giftOptions[0]) {
+    if (catalogFormMode !== "edit") return;
+    if (!giftOptions.length) {
+      setSelectedGiftId("");
+      return;
+    }
+    if (!selectedGiftId || !giftOptions.some((g) => g.id === selectedGiftId)) {
       setSelectedGiftId(giftOptions[0].id);
     }
-  }, [giftOptions, selectedGiftId]);
+  }, [giftOptions, selectedGiftId, catalogFormMode]);
 
   useEffect(() => {
+    if (catalogFormMode !== "edit") return;
     const g = giftOptions.find((x) => x.id === selectedGiftId);
     if (!g) return;
+    const pay = GIFT_PAYMENT_BY_ID[g.id];
+    setGId(g.id);
     setGName(g.name);
     setGPrice(
       g.price === null || g.openAmount ? "" : String(Math.round(g.price))
@@ -200,9 +289,9 @@ export function AdminPage() {
     setGCategory(g.category);
     setGActive(g.active);
     setGOpenAmount(Boolean(g.openAmount || g.price === null));
-    setGPix(g.pixCode ?? "");
-    setGCard(g.cardPaymentLink ?? "");
-  }, [giftOptions, selectedGiftId]);
+    setGPix(g.pixCode ?? pay?.pixCode ?? "");
+    setGCard(g.cardPaymentLink ?? pay?.cardPaymentLink ?? "");
+  }, [giftOptions, selectedGiftId, catalogFormMode]);
 
   const login = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,10 +324,71 @@ export function AdminPage() {
     else setBanner("Presente marcado como recebido.");
   };
 
+  const startCreateGift = () => {
+    setBanner(null);
+    setCatalogFormMode("create");
+    setSelectedGiftId("");
+    setGId("");
+    setGName("");
+    setGPrice("");
+    setGImage("/gifts/");
+    setGCategory("casa");
+    setGActive(true);
+    setGOpenAmount(false);
+    setGPix("");
+    setGCard("");
+  };
+
+  const startEditGift = (giftId: string) => {
+    setBanner(null);
+    const g = giftOptions.find((x) => x.id === giftId);
+    if (!g) return;
+    const pay = GIFT_PAYMENT_BY_ID[g.id];
+    setCatalogFormMode("edit");
+    setSelectedGiftId(giftId);
+    setGId(g.id);
+    setGName(g.name);
+    setGPrice(
+      g.price === null || g.openAmount ? "" : String(Math.round(g.price))
+    );
+    setGImage(normalizePublicAssetPath(g.image));
+    setGCategory(g.category);
+    setGActive(g.active);
+    setGOpenAmount(Boolean(g.openAmount || g.price === null));
+    setGPix(g.pixCode ?? pay?.pixCode ?? "");
+    setGCard(g.cardPaymentLink ?? pay?.cardPaymentLink ?? "");
+  };
+
+  const hideCatalogForm = () => {
+    setCatalogFormMode("hidden");
+    setSelectedGiftId("");
+  };
+
   const saveCatalog = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (seeding) {
+      setBanner("Aguarde a publicação no Firebase terminar para salvar alterações.");
+      return;
+    }
+    const isCreatingGift = catalogFormMode === "create";
+    if (!isCreatingGift && !selectedGiftId) {
+      setBanner("Selecione um presente para editar.");
+      return;
+    }
     setCatalogSaving(true);
     setBanner(null);
+    const normalizedId = toGiftId(gId);
+    const targetId = isCreatingGift ? normalizedId : selectedGiftId;
+    if (!targetId) {
+      setBanner("Informe um ID para o presente.");
+      setCatalogSaving(false);
+      return;
+    }
+    if (isCreatingGift && giftOptions.some((g) => g.id === targetId)) {
+      setBanner("Já existe um presente com esse ID.");
+      setCatalogSaving(false);
+      return;
+    }
     const priceParsed =
       gPrice.trim() === "" ? NaN : Number(gPrice.replace(",", "."));
     const price =
@@ -250,7 +400,8 @@ export function AdminPage() {
       setCatalogSaving(false);
       return;
     }
-    const currentGift = giftOptions.find((x) => x.id === selectedGiftId);
+    const currentGift = giftOptions.find((x) => x.id === targetId);
+    const defaultPay = currentGift ? GIFT_PAYMENT_BY_ID[currentGift.id] : undefined;
     const imagePath =
       gImage.trim() ||
       (currentGift ? normalizePublicAssetPath(currentGift.image) : "");
@@ -259,29 +410,95 @@ export function AdminPage() {
       setCatalogSaving(false);
       return;
     }
-    const res = await upsertGiftCatalogItem({
-      id: selectedGiftId,
-      name: gName,
-      price,
-      image: imagePath.startsWith("/") ? imagePath : `/${imagePath}`,
-      category: gCategory,
-      active: gActive,
-      openAmount: gOpenAmount,
-      pixCode: gPix,
-      cardPaymentLink: gCard,
-    });
-    setCatalogSaving(false);
-    if (!res.ok) setBanner(res.error);
-    else setBanner("Presente salvo no catálogo.");
+    try {
+      const res = await upsertGiftCatalogItem({
+        id: targetId,
+        name: gName,
+        price,
+        image: imagePath.startsWith("/") ? imagePath : `/${imagePath}`,
+        category: gCategory,
+        active: gActive,
+        openAmount: gOpenAmount,
+        pixCode: gPix.trim() || defaultPay?.pixCode || "",
+        cardPaymentLink: gCard.trim() || defaultPay?.cardPaymentLink || "",
+      });
+      if (!res.ok) setBanner(res.error);
+      else {
+        setBanner("Presente salvo no catálogo.");
+        setCatalogFormMode("edit");
+        setSelectedGiftId(targetId);
+        setGId(targetId);
+      }
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Erro ao salvar presente.";
+      setBanner(msg);
+    } finally {
+      setCatalogSaving(false);
+    }
   };
 
   const seedCatalog = async () => {
     setSeeding(true);
     setBanner(null);
-    const res = await seedGiftCatalogFromCodeDefaults();
-    setSeeding(false);
-    if (!res.ok) setBanner(res.error);
-    else setBanner("Lista padrão importada para o Firestore.");
+    try {
+      const res = await seedGiftCatalogFromCodeDefaults();
+      if (!res.ok) setBanner(res.error);
+      else setBanner("Lista padrão importada para o Firestore.");
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Erro ao publicar no Firebase.";
+      setBanner(msg);
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const deleteCatalogGift = async (giftId: string) => {
+    const item = giftOptions.find((g) => g.id === giftId);
+    const ok = window.confirm(
+      `Excluir o presente "${item?.name ?? giftId}" do catálogo?`
+    );
+    if (!ok) return;
+    setBanner(null);
+    setGiftDeletingId(giftId);
+    try {
+      const res = await (firestoreIds.has(giftId)
+        ? deleteGiftCatalogItem(giftId)
+        : upsertGiftCatalogItem({
+            id: giftId,
+            name: item?.name ?? giftId,
+            price: item?.price ?? null,
+            image:
+              item && item.image
+                ? normalizePublicAssetPath(item.image)
+                : "/gifts/placeholder.webp",
+            category: item?.category ?? "casa",
+            active: false,
+            openAmount: Boolean(item?.openAmount),
+            pixCode: item?.pixCode ?? "",
+            cardPaymentLink: item?.cardPaymentLink ?? "",
+          }));
+      if (!res.ok) {
+        setBanner(res.error);
+        return;
+      }
+      if (selectedGiftId === giftId) {
+        setSelectedGiftId("");
+        setCatalogFormMode("hidden");
+      }
+      setBanner(
+        firestoreIds.has(giftId)
+          ? "Presente excluído do catálogo."
+          : "Presente ocultado da lista pública."
+      );
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Erro ao excluir/ocultar presente.";
+      setBanner(msg);
+    } finally {
+      setGiftDeletingId(null);
+    }
   };
 
   if (!firebaseOk || !auth || !db) {
@@ -549,135 +766,249 @@ export function AdminPage() {
             <h2 className="font-display text-xl text-texto">
               Catálogo de presentes
             </h2>
-            <button
-              type="button"
-              disabled={seeding}
-              onClick={() => void seedCatalog()}
-              className="rounded-full border border-bege-areia bg-white/70 px-4 py-2 text-sm text-texto hover:border-oliva/40 disabled:opacity-50"
-            >
-              {seeding ? "Importando…" : "Importar lista padrão (Firestore)"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={startCreateGift}
+                className="rounded-full bg-oliva px-4 py-2 text-sm text-white hover:bg-oliva/90"
+              >
+                + Criar novo presente
+              </button>
+              <button
+                type="button"
+                disabled={seeding}
+                onClick={() => void seedCatalog()}
+                className="rounded-full border border-bege-areia bg-white/70 px-4 py-2 text-sm text-texto hover:border-oliva/40 disabled:opacity-50"
+              >
+                {seeding ? "Publicando…" : "Publicar 31 no Firebase"}
+              </button>
+            </div>
           </div>
           <p className="text-sm text-texto/65">
-            Ajuste nome, foto (caminho em <code className="text-xs">/gifts/…</code>
-            ), valor, Pix e link do cartão. O site público mescla estes dados com
-            a lista base do código.
+            Visualize toda a lista de presentes (base + Firestore), edite, oculte,
+            exclua itens do Firestore e crie novos. Para imagem, use caminho público como{" "}
+            <code className="text-xs">/gifts/arquivo.webp</code>.
           </p>
-
-          <form
-            onSubmit={saveCatalog}
-            className="rounded-2xl border border-bege-claro bg-white/70 p-6 shadow-sm space-y-4 max-w-xl"
-          >
-            <label className="block text-sm">
-              <span className="text-texto/70">Presente</span>
-              <select
-                className="mt-1.5 w-full rounded-xl border border-bege-claro bg-cream/50 px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
-                value={selectedGiftId}
-                onChange={(e) => setSelectedGiftId(e.target.value)}
-              >
-                {giftOptions.map((g: GiftItem) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block text-sm">
-              <span className="text-texto/70">Nome</span>
-              <input
-                className="mt-1.5 w-full rounded-xl border border-bege-claro bg-cream/50 px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
-                value={gName}
-                onChange={(e) => setGName(e.target.value)}
-                required
-              />
-            </label>
-
-            <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                className="accent-oliva"
-                checked={gOpenAmount}
-                onChange={(e) => setGOpenAmount(e.target.checked)}
-              />
-              <span className="text-texto/75">Valor livre (contribuição)</span>
-            </label>
-
-            <label className="block text-sm">
-              <span className="text-texto/70">Preço (R$)</span>
-              <input
-                disabled={gOpenAmount}
-                className="mt-1.5 w-full rounded-xl border border-bege-claro bg-cream/50 px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40 disabled:opacity-50"
-                value={gPrice}
-                onChange={(e) => setGPrice(e.target.value)}
-                placeholder="Ex.: 250"
-              />
-            </label>
-
-            <label className="block text-sm">
-              <span className="text-texto/70">Imagem (URL pública)</span>
-              <input
-                className="mt-1.5 w-full rounded-xl border border-bege-claro bg-cream/50 px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
-                value={gImage}
-                onChange={(e) => setGImage(e.target.value)}
-                placeholder="/gifts/arquivo.webp"
-                required
-              />
-            </label>
-
-            <label className="block text-sm">
-              <span className="text-texto/70">Categoria</span>
-              <select
-                className="mt-1.5 w-full rounded-xl border border-bege-claro bg-cream/50 px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
-                value={gCategory}
-                onChange={(e) => setGCategory(e.target.value as GiftCategory)}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                className="accent-oliva"
-                checked={gActive}
-                onChange={(e) => setGActive(e.target.checked)}
-              />
-              <span className="text-texto/75">Ativo na lista pública</span>
-            </label>
-
-            <label className="block text-sm">
-              <span className="text-texto/70">Pix copia e cola</span>
-              <textarea
-                rows={3}
-                className="mt-1.5 w-full resize-y rounded-xl border border-bege-claro bg-cream/50 px-4 py-3 font-mono text-xs outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
-                value={gPix}
-                onChange={(e) => setGPix(e.target.value)}
-              />
-            </label>
-
-            <label className="block text-sm">
-              <span className="text-texto/70">Link cartão (InfinitePay etc.)</span>
-              <input
-                className="mt-1.5 w-full rounded-xl border border-bege-claro bg-cream/50 px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
-                value={gCard}
-                onChange={(e) => setGCard(e.target.value)}
-                placeholder="https://..."
-              />
-            </label>
-
+          <div className="sm:hidden">
             <button
-              type="submit"
-              disabled={catalogSaving}
-              className="w-full rounded-full bg-oliva py-3 text-sm font-medium text-white hover:bg-oliva/90 disabled:opacity-50 transition-colors"
+              type="button"
+              onClick={startCreateGift}
+              className="w-full rounded-full bg-oliva px-4 py-2.5 text-sm text-white hover:bg-oliva/90"
             >
-              {catalogSaving ? "Salvando…" : "Salvar presente"}
+              + Criar novo presente
             </button>
-          </form>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-bege-claro bg-white/70 shadow-sm">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-bege-claro/80 bg-cream/80 text-xs uppercase tracking-wide text-texto/55">
+                <tr>
+                  <th className="px-4 py-3">Nome</th>
+                  <th className="px-4 py-3">ID</th>
+                  <th className="px-4 py-3">Categoria</th>
+                  <th className="px-4 py-3">Valor</th>
+                  <th className="px-4 py-3">Ativo</th>
+                  <th className="px-4 py-3">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {giftOptions.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-8 text-center text-texto/60"
+                    >
+                      Nenhum presente encontrado.
+                    </td>
+                  </tr>
+                ) : (
+                  giftOptions.map((g) => (
+                    <tr
+                      key={g.id}
+                      className="border-b border-bege-claro/50 align-top"
+                    >
+                      <td className="px-4 py-3 font-medium">{g.name}</td>
+                      <td className="px-4 py-3 text-xs text-texto/60">{g.id}</td>
+                      <td className="px-4 py-3">{g.category}</td>
+                      <td className="px-4 py-3">
+                        {g.openAmount || g.price === null
+                          ? "Valor livre"
+                          : g.price.toLocaleString("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            })}
+                      </td>
+                      <td className="px-4 py-3">{g.active ? "Sim" : "Não"}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => startEditGift(g.id)}
+                            className="rounded-full border border-oliva/40 px-3 py-1.5 text-xs text-oliva hover:bg-oliva hover:text-white transition-colors"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            disabled={giftDeletingId === g.id}
+                            onClick={() => void deleteCatalogGift(g.id)}
+                            className="rounded-full border border-red-300 px-3 py-1.5 text-xs text-red-700 hover:bg-red-600 hover:text-white transition-colors disabled:opacity-60"
+                          >
+                            {giftDeletingId === g.id
+                              ? "Salvando…"
+                              : firestoreIds.has(g.id)
+                                ? "Excluir"
+                                : "Ocultar"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {catalogFormMode === "hidden" ? null : (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6">
+              <button
+                type="button"
+                onClick={hideCatalogForm}
+                className="absolute inset-0 bg-texto/45 backdrop-blur-[1px]"
+                aria-label="Fechar edição de presente"
+              />
+              <form
+                onSubmit={saveCatalog}
+                className="relative z-10 max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-bege-claro bg-cream p-6 shadow-2xl space-y-4"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <h3 className="font-display text-lg text-texto">
+                    {catalogFormMode === "create"
+                      ? "Adicionar presente"
+                      : "Editar presente"}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={hideCatalogForm}
+                    className="rounded-full border border-bege-areia bg-white px-3 py-1 text-xs text-texto hover:border-oliva/40"
+                  >
+                    Fechar
+                  </button>
+                </div>
+
+                <label className="block text-sm">
+                  <span className="text-texto/70">ID (slug)</span>
+                  <input
+                    className="mt-1.5 w-full rounded-xl border border-bege-claro bg-white px-4 py-3 font-mono text-xs outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40 disabled:opacity-60"
+                    value={gId}
+                    onChange={(e) => setGId(e.target.value)}
+                    placeholder="ex.: jogo-pratos"
+                    disabled={catalogFormMode !== "create"}
+                    required
+                  />
+                </label>
+
+                <label className="block text-sm">
+                  <span className="text-texto/70">Nome</span>
+                  <input
+                    className="mt-1.5 w-full rounded-xl border border-bege-claro bg-white px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
+                    value={gName}
+                    onChange={(e) => setGName(e.target.value)}
+                    required
+                  />
+                </label>
+
+                <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="accent-oliva"
+                    checked={gOpenAmount}
+                    onChange={(e) => setGOpenAmount(e.target.checked)}
+                  />
+                  <span className="text-texto/75">Valor livre (contribuição)</span>
+                </label>
+
+                <label className="block text-sm">
+                  <span className="text-texto/70">Preço (R$)</span>
+                  <input
+                    disabled={gOpenAmount}
+                    className="mt-1.5 w-full rounded-xl border border-bege-claro bg-white px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40 disabled:opacity-50"
+                    value={gPrice}
+                    onChange={(e) => setGPrice(e.target.value)}
+                    placeholder="Ex.: 250"
+                  />
+                </label>
+
+                <label className="block text-sm">
+                  <span className="text-texto/70">Imagem (URL pública)</span>
+                  <input
+                    className="mt-1.5 w-full rounded-xl border border-bege-claro bg-white px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
+                    value={gImage}
+                    onChange={(e) => setGImage(e.target.value)}
+                    placeholder="/gifts/arquivo.webp"
+                    required
+                  />
+                </label>
+
+                <label className="block text-sm">
+                  <span className="text-texto/70">Categoria</span>
+                  <select
+                    className="mt-1.5 w-full rounded-xl border border-bege-claro bg-white px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
+                    value={gCategory}
+                    onChange={(e) => setGCategory(e.target.value as GiftCategory)}
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="accent-oliva"
+                    checked={gActive}
+                    onChange={(e) => setGActive(e.target.checked)}
+                  />
+                  <span className="text-texto/75">Ativo na lista pública</span>
+                </label>
+
+                <label className="block text-sm">
+                  <span className="text-texto/70">Pix copia e cola</span>
+                  <textarea
+                    rows={3}
+                    className="mt-1.5 w-full resize-y rounded-xl border border-bege-claro bg-white px-4 py-3 font-mono text-xs outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
+                    value={gPix}
+                    onChange={(e) => setGPix(e.target.value)}
+                  />
+                </label>
+
+                <label className="block text-sm">
+                  <span className="text-texto/70">Link cartão (InfinitePay etc.)</span>
+                  <input
+                    className="mt-1.5 w-full rounded-xl border border-bege-claro bg-white px-4 py-3 outline-none focus:border-salvia/80 focus:ring-1 focus:ring-salvia/40"
+                    value={gCard}
+                    onChange={(e) => setGCard(e.target.value)}
+                    placeholder="https://..."
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={catalogSaving || seeding}
+                  className="w-full rounded-full bg-oliva py-3 text-sm font-medium text-white hover:bg-oliva/90 disabled:opacity-50 transition-colors"
+                >
+                  {catalogSaving
+                    ? "Salvando…"
+                    : catalogFormMode === "create"
+                      ? "Criar presente"
+                      : "Salvar alterações"}
+                </button>
+              </form>
+            </div>
+          )}
         </section>
       ) : null}
     </div>

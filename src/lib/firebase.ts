@@ -1,6 +1,10 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  type Firestore,
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,6 +25,7 @@ function hasRequiredConfig(): boolean {
 
 let app: FirebaseApp | undefined;
 let auth: Auth | null | undefined;
+let firestore: Firestore | undefined;
 
 export function getFirebaseApp(): FirebaseApp | null {
   if (!hasRequiredConfig()) return null;
@@ -33,7 +38,16 @@ export function getFirebaseApp(): FirebaseApp | null {
 export function getFirestoreDb(): Firestore | null {
   const a = getFirebaseApp();
   if (!a) return null;
-  return getFirestore(a);
+  if (firestore) return firestore;
+  try {
+    /** Auto-detecta long polling quando WebSocket falha (evita forçar sempre, que em raros casos atrasa writes). */
+    firestore = initializeFirestore(a, {
+      experimentalAutoDetectLongPolling: true,
+    });
+  } catch {
+    firestore = getFirestore(a);
+  }
+  return firestore;
 }
 
 export function getFirebaseAuth(): Auth | null {
