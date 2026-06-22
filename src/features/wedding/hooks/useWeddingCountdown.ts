@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-/** 6 de junho de 2026 — cerimônia às 16h (horário de Brasília). */
-const WEDDING_DATE = new Date("2026-06-06T16:00:00-03:00");
+/** 14 de julho de 2026 — casamento às 19h (horário de Brasília). */
+const WEDDING_DATE = new Date("2026-07-14T19:00:00-03:00");
 
 export type CountdownParts = {
   days: number;

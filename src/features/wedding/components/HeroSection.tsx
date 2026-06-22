@@ -110,13 +110,13 @@ export function HeroSection() {
             href="#presentes"
             className="inline-flex max-w-[min(100%,20rem)] items-center justify-center rounded-full bg-oliva px-5 py-3.5 text-center text-xs leading-snug tracking-wide text-white shadow-sm hover:bg-oliva/90 transition-all hover:shadow-md sm:max-w-none sm:px-8 sm:text-sm sm:leading-normal"
           >
-            Lista de presentes - chá de casa nova
+            Lista de presentes - casamento
           </a>
           <a
             href="#rsvp"
             className="inline-flex max-w-[min(100%,20rem)] items-center justify-center rounded-full border border-bege-areia bg-white/60 px-5 py-3.5 text-center text-xs leading-snug tracking-wide text-texto hover:border-oliva/50 transition-all sm:max-w-none sm:px-8 sm:text-sm sm:leading-normal"
           >
-            Confirmar presença - chá de casa nova
+            Confirmar presença - casamento
           </a>
         </div>
       </div>
