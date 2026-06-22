@@ -98,7 +98,7 @@ export function HeroSection() {
             Fernanda & Gabriel
           </h1>
           <p className="font-display text-xl sm:text-2xl md:text-3xl text-texto/85 mb-10 animate-fade-up [animation-delay:220ms] opacity-0">
-            6 de junho de 2026
+            14 de julho de 2026
           </p>
           <p className="max-w-xl mx-auto text-base md:text-lg text-texto/70 leading-relaxed animate-fade-up [animation-delay:300ms] opacity-0">
             Cada detalhe deste convite carrega um pedacinho do nosso amor e o

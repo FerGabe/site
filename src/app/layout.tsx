@@ -24,7 +24,7 @@ const heroName = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "Fer & Gabe — 6 de junho de 2026",
+  title: "Fer & Gabe — 14 de julho de 2026",
   description:
     "Com muito amor, convidamos você a celebrar conosco o nosso casamento.",
   icons: {

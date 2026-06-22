@@ -8,7 +8,7 @@ export function Footer() {
           <MonogramMark size={74} className="h-16 w-auto" />
         </div>
         <p className="text-sm tracking-[0.25em] uppercase text-texto/50 mb-6">
-          6 de junho de 2026
+          14 de julho de 2026
         </p>
         <p className="text-texto/60 text-sm max-w-md mx-auto leading-relaxed">
           Com gratidão e amor — obrigado por fazer parte da nossa história.
